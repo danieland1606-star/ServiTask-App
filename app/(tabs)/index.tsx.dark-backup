@@ -1,0 +1,1567 @@
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, SafeAreaView, ScrollView, Image, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, LayoutAnimation, UIManager, Animated } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
+import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
+import MapView, { Marker } from 'react-native-maps';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useFonts, Montserrat_400Regular, Montserrat_700Bold, Montserrat_900Black } from '@expo-google-fonts/montserrat';
+import { supabase } from '../../lib/supabase';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
+WebBrowser.maybeCompleteAuthSession();
+
+// ══════════════════════════════════════════
+// HOME SCREEN (MAIN APP)
+// ══════════════════════════════════════════
+function HomeScreen({ session, setSession }) {
+  const [userName, setUserName] = useState('ServiTask');
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedSubs, setSelectedSubs] = useState([]);
+  const [step, setStep] = useState('category'); // 'category' | 'form'
+  
+  // Form State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [isAiFiltered, setIsAiFiltered] = useState(false);
+  const [recentSearches, setRecentSearches] = useState(["Revisión de tuberías", "Mi lavabo gotea"]);
+  const [isLocating, setIsLocating] = useState(false);
+  const [showProvModal, setShowProvModal] = useState(false); // Deprecated in favor of map
+  const [showMapModal, setShowMapModal] = useState(false);
+  const [showLocationMenu, setShowLocationMenu] = useState(false);
+  const [mapRegion, setMapRegion] = useState({ latitude: -2.1894, longitude: -79.8890, latitudeDelta: 0.05, longitudeDelta: 0.05 });
+  const [location, setLocation] = useState('Buscando...');
+  const [savedLocations, setSavedLocations] = useState([
+    { id: '1', name: 'Ubicación actual', address: 'Buscando vía GPS...', icon: 'crosshair', isCurrent: true },
+    { id: '2', name: 'Casa', address: 'Mz 40, Villa 12, Norte de Guayaquil', icon: 'home' },
+    { id: '3', name: 'Oficina', address: 'Edificio Roraima, Centro de Guayaquil', icon: 'briefcase' }
+  ]);
+  const [addressDetails, setAddressDetails] = useState('');
+  const [duration, setDuration] = useState('1 hora o fracción');
+  const [priceMin, setPriceMin] = useState('20');
+  const [priceMax, setPriceMax] = useState('50');
+  const [details, setDetails] = useState('');
+  const [attachments, setAttachments] = useState([]);
+  
+  const [sliderWidth, setSliderWidth] = useState(0);
+
+  const PROVINCES = ["Azuay", "Bolívar", "Cañar", "Carchi", "Chimborazo", "Cotopaxi", "El Oro", "Esmeraldas", "Galápagos", "Guayas", "Imbabura", "Loja", "Los Ríos", "Manabí", "Morona Santiago", "Napo", "Orellana", "Pastaza", "Pichincha", "Santa Elena", "Santo Domingo", "Sucumbíos", "Tungurahua", "Zamora Chinchipe"];
+
+  const handleSliderTouch = (e) => {
+    if (sliderWidth === 0) return;
+    const locX = Math.max(0, Math.min(e.nativeEvent.locationX, sliderWidth));
+    const minLimit = 10, maxLimit = 300;
+    const val = Math.round((locX / sliderWidth) * (maxLimit - minLimit) + minLimit);
+    
+    const curMin = parseInt(priceMin) || minLimit;
+    const curMax = parseInt(priceMax) || maxLimit;
+
+    if (Math.abs(val - curMin) < Math.abs(val - curMax)) {
+      setPriceMin(String(Math.min(val, curMax - 5)));
+    } else {
+      setPriceMax(String(Math.max(val, curMin + 5)));
+    }
+  };
+
+  useEffect(() => {
+    if (session?.user?.user_metadata?.full_name) {
+      setUserName(session.user.user_metadata.full_name.split(' ')[0]);
+    }
+  }, [session]);
+
+  // Auto-detect location silently on mount
+  useEffect(() => {
+    const detectLocation = async () => {
+      try {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setLocation('Ubicación no disponible');
+          return;
+        }
+        setLocation('Detectando...');
+        let loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        let geocode = await Location.reverseGeocodeAsync({
+          latitude: loc.coords.latitude,
+          longitude: loc.coords.longitude,
+        });
+        if (geocode && geocode.length > 0) {
+          const g = geocode[0];
+          const city = g.city || g.subregion || g.region || '';
+          const country = g.country || '';
+          const label = city && country ? `${city}, ${country}` : city || country || 'Mi ubicación';
+          setLocation(label);
+          // Also update mapRegion silently
+          setMapRegion({
+            latitude: loc.coords.latitude,
+            longitude: loc.coords.longitude,
+            latitudeDelta: 0.005,
+            longitudeDelta: 0.005,
+          });
+          // Update savedLocations current entry
+          setSavedLocations(prev => prev.map(sl =>
+            sl.isCurrent ? { ...sl, address: label } : sl
+          ));
+        } else {
+          setLocation('Mi ubicación actual');
+        }
+      } catch {
+        setLocation('Guayaquil, Ecuador');
+      }
+    };
+    detectLocation();
+  }, []);
+
+
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) Alert.alert('Error', error.message);
+  };
+
+  const handleGetLocation = async () => {
+    try {
+      setIsLocating(true);
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Sigue tu camino 📍', 'Para sugerir tu dirección automáticamente, ServiTask necesita acceso al GPS de tu dispositivo. Puedes habilitarlo en Configuración.');
+        setIsLocating(false);
+        return;
+      }
+      
+      let locationObj = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      
+      setMapRegion({
+        latitude: locationObj.coords.latitude,
+        longitude: locationObj.coords.longitude,
+        latitudeDelta: 0.005,
+        longitudeDelta: 0.005,
+      });
+      setShowMapModal(true);
+
+    } catch (err) {
+      Alert.alert('Error GPS', 'Asegúrate de tener la ubicación encendida o prueba arrastrar el mapa manualmente.');
+      setShowMapModal(true);
+    } finally {
+      setIsLocating(false);
+    }
+  };
+
+  const handlePickMedia = async (useCamera = false) => {
+    try {
+      let result;
+      const options = {
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsEditing: true,
+        quality: 0.7,
+      };
+
+      if (useCamera) {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') return Alert.alert('Permiso', 'Se necesita acceso a la cámara de tu celular.');
+        result = await ImagePicker.launchCameraAsync(options);
+      } else {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') return Alert.alert('Permiso', 'Se necesita acceso a la galería de fotos.');
+        result = await ImagePicker.launchImageLibraryAsync(options);
+      }
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setAttachments(prev => [...prev, result.assets[0]]);
+      }
+    } catch (e) {
+      Alert.alert('Error al adjuntar', 'Ocurrió un problema cargando el archivo multimedia.');
+    }
+  };
+
+  const removeAttachment = (indexToRemove) => {
+    setAttachments(prev => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  const CATEGORIES = [
+    { 
+      id: "reparaciones",
+      iconLib: 'MaterialCommunityIcons', iconName: 'wrench', color: '#1A6BFF',
+      label: "Reparaciones",
+      subs: [
+        { name: "Handyman", image: require('../../assets/images/rep_handyman_v.png') },
+        { name: "Plomería", image: require('../../assets/images/rep_plomeria_v.png') },
+        { name: "Electricidad", image: require('../../assets/images/rep_electricidad_v.png') },
+        { name: "Electrodomésticos", image: require('../../assets/images/rep_plomeria_v.png') },
+        { name: "Mecánica", image: require('../../assets/images/rep_handyman_v.png') },
+        { name: "Tecnología", image: require('../../assets/images/rep_electricidad_v.png') },
+        { name: "Otros", emoji: "➕" }
+      ]
+    },
+    { 
+      id: "limpieza",
+      iconLib: 'MaterialCommunityIcons', iconName: 'spray-bottle', color: '#7C3AED',
+      label: "Limpieza",
+      subs: [
+        { name: "Residencial", image: require('../../assets/images/limpieza_residencial.png') },
+        { name: "Oficinas y Locales", image: require('../../assets/images/limpieza_oficinas.png') },
+        { name: "Deep Cleaning", image: require('../../assets/images/limpieza_deep.png') },
+        { name: "Car Wash", image: require('../../assets/images/limpieza_carwash.png') },
+        { name: "Piscina", image: require('../../assets/images/limpieza_piscina.png') },
+        { name: "Otros", emoji: "➕" }
+      ]
+    },
+    { 
+      id: "exteriores",
+      iconLib: 'MaterialCommunityIcons', iconName: 'leaf', color: '#22C55E',
+      label: "Exteriores",
+      subs: [
+        { name: "Jardinería", image: require('../../assets/images/auth_hero_vector.png') },
+        { name: "Riego y Drenaje", image: require('../../assets/images/auth_hero_vector.png') },
+        { name: "Otros", emoji: "➕" }
+      ]
+    },
+    { 
+      id: "construccion",
+      iconLib: 'MaterialCommunityIcons', iconName: 'hard-hat', color: '#F59E0B',
+      label: "Construcción",
+      subs: [
+        { name: "Montaje Ligero", image: require('../../assets/images/auth_hero_vector.png') },
+        { name: "Montaje General", image: require('../../assets/images/auth_hero_vector.png') },
+        { name: "Montaje ProMart", image: require('../../assets/images/auth_hero_vector.png') },
+        { name: "Otros", emoji: "➕" }
+      ]
+    },
+    { 
+      id: "otros",
+      iconLib: 'MaterialCommunityIcons', iconName: 'dots-horizontal-circle', color: '#EC4899',
+      label: "Otros",
+      subs: [
+        { name: "Cualquier otra tarea", image: require('../../assets/images/auth_hero_vector.png') }
+      ]
+    },
+  ];
+
+
+  const toggleSub = (subName) => {
+    if (selectedSubs.includes(subName)) {
+      setSelectedSubs(selectedSubs.filter(s => s !== subName));
+    } else {
+      setSelectedSubs([...selectedSubs, subName]);
+    }
+  };
+
+  const GEMINI_API_KEY = "PEGA_TU_API_KEY_AQUI"; // REEMPLAZAR CON LA CLAVE REAL DE GEMINI
+
+  const handleSmartSearch = async (overrideQuery = null) => {
+    const q = overrideQuery || searchQuery;
+    if (!q.trim()) return;
+    
+    setIsSearching(true);
+
+    try {
+      const promptText = `
+        Eres el asistente inteligente de ServiTask. El usuario escribirá una necesidad o problema que tiene.
+        Tu trabajo es clasificar su problema en EXACTAMENTE UNA de estas categorías y UNA de sus subcategorías relacionadas:
+        
+        Categorías disponibles:
+        - "reparaciones" (Subs: Handyman, Plomería, Electricidad, Electrodomésticos, Mecánica, Tecnología, Otros)
+        - "limpieza" (Subs: Residencial, Oficinas y Locales, Deep Cleaning, Car Wash, Piscina, Otros)
+        - "exteriores" (Subs: Jardinería, Riego y Drenaje, Otros)
+        - "construccion" (Subs: Montaje Ligero, Montaje General, Montaje ProMart, Otros)
+        - "otros" (Subs: Cualquier otra tarea)
+
+        Importante: Devuelve SOLO Y ÚNICAMENTE un objeto JSON válido.
+        Formato requerido: {"categoryId": "id_categoria_aqui", "subCategory": "Nombre_Subcategoria_exacto_aqui"}
+        
+        Texto del usuario: "${q}"
+      `;
+
+      if (GEMINI_API_KEY === "PEGA_TU_API_KEY_AQUI") {
+        await new Promise(r => setTimeout(r, 1500));
+        let mockCategory = "reparaciones";
+        let mockSub = "Handyman";
+        
+        const qLower = q.toLowerCase();
+        if (qLower.includes("limpi") || qLower.includes("sucia") || qLower.includes("lavar")) { mockCategory = "limpieza"; mockSub = "Residencial"; }
+        else if (qLower.includes("agua") || qLower.includes("tubo") || qLower.includes("got") || qLower.includes("revis")) { mockCategory = "reparaciones"; mockSub = "Plomería"; }
+        else if (qLower.includes("jardin") || qLower.includes("pasto") || qLower.includes("cesped")) { mockCategory = "exteriores"; mockSub = "Jardinería"; }
+
+        const foundCat = CATEGORIES.find(c => c.id === mockCategory);
+        if (foundCat) {
+           LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+           setIsAiFiltered(true);
+           setSelectedCategory(foundCat);
+           setSelectedSubs([mockSub]);
+           setStep('form');
+           if (!recentSearches.includes(q.trim())) setRecentSearches(prev => [q.trim(), ...prev].slice(0, 5));
+        }
+        setIsSearching(false);
+        setSearchQuery('');
+        return;
+      }
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: promptText }] }],
+          generationConfig: { temperature: 0.1 }
+        })
+      });
+
+      const data = await response.json();
+      if (data.error) throw new Error(data.error.message);
+
+      let textOutput = data.candidates[0].content.parts[0].text;
+      textOutput = textOutput.replace(/```json/g, "").replace(/```/g, "").trim();
+      
+      const jsonResponse = JSON.parse(textOutput);
+      const foundCat = CATEGORIES.find(c => c.id === jsonResponse.categoryId);
+      
+      if (foundCat) {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setIsAiFiltered(true);
+        setSelectedCategory(foundCat);
+        setSelectedSubs([jsonResponse.subCategory]);
+        setStep('form');
+        if (!recentSearches.includes(q.trim())) setRecentSearches(prev => [q.trim(), ...prev].slice(0, 5));
+        setSearchQuery('');
+      } else {
+        Alert.alert("Interesante 🤔", "Intenta describirlo con otras palabras.");
+      }
+
+    } catch (error) {
+      console.log("Error Gemini:", error);
+      Alert.alert("Hubo un problema", "Revisa tu conexión o tu configuración de API.");
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  if (step === 'search') {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#0D0F1A' }}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+          <View style={{ padding: 24, paddingTop: Platform.OS === 'android' ? 60 : 40, flexDirection: 'row', alignItems: 'center', backgroundColor: '#0D0F1A', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', zIndex: 10 }}>
+            <TouchableOpacity onPress={() => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setStep('category'); }} style={{ paddingRight: 15 }}>
+              <Feather name="arrow-left" size={24} color="#FFF" />
+            </TouchableOpacity>
+            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, borderWidth: 1, borderColor: isSearching ? '#1A6BFF' : 'rgba(255,255,255,0.1)' }}>
+              <Feather name="search" size={18} color={isSearching ? "#1A6BFF" : "#8B8FA8"} style={{ marginRight: 10 }} />
+              <TextInput 
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                onSubmitEditing={() => handleSmartSearch()}
+                placeholder="Ej: Necesito arreglar..."
+                placeholderTextColor="#8B8FA8"
+                style={{ flex: 1, color: '#FFF', fontFamily: 'Montserrat_400Regular', fontSize: 14 }}
+                editable={!isSearching}
+                returnKeyType="search"
+                autoFocus={true}
+              />
+              {isSearching ? (
+                <ActivityIndicator color="#1A6BFF" size="small" style={{ marginLeft: 10 }} />
+              ) : (
+                searchQuery.trim().length > 0 && (
+                  <TouchableOpacity onPress={() => handleSmartSearch()} style={{ marginLeft: 10 }}>
+                    <Feather name="arrow-right" size={20} color="#1A6BFF" />
+                  </TouchableOpacity>
+                )
+              )}
+            </View>
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 24 }}>
+            <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFF', fontSize: 16, marginBottom: 20 }}>Búsquedas recientes</Text>
+            {recentSearches.map((term, index) => (
+              <TouchableOpacity 
+                key={index}
+                onPress={() => {
+                  setSearchQuery(term);
+                  handleSmartSearch(term);
+                }}
+                style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', paddingHorizontal: 16, paddingVertical: 16, borderRadius: 12, marginBottom: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}
+              >
+                <Feather name="clock" size={18} color="#8B8FA8" style={{ marginRight: 12 }} />
+                <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#FFF', fontSize: 14, flex: 1 }}>{term}</Text>
+                <Feather name="arrow-up-left" size={18} color="#5A5E73" />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    );
+  }
+
+  if (selectedCategory && step === 'form') {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#0D0F1A' }}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+          <View style={{ padding: 24, paddingTop: Platform.OS === 'android' ? 60 : 40, flexDirection: 'row', alignItems: 'center', backgroundColor: '#0D0F1A', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', zIndex: 10 }}>
+            <TouchableOpacity onPress={() => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setIsAiFiltered(false); setStep('category'); }} style={{ paddingRight: 15 }}>
+              <Feather name="arrow-left" size={24} color="#FFF" />
+            </TouchableOpacity>
+            <View>
+              <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFF', fontSize: 20 }}>Detalles de solicitud</Text>
+              {isAiFiltered && selectedSubs.length > 0 && (
+                <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#22C55E', fontSize: 12, marginTop: 2 }}>
+                  ✦ Inteligencia Artificial: {selectedSubs[0]}
+                </Text>
+              )}
+            </View>
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 25 }}>
+              {selectedSubs.map((s, i) => (
+                <View key={i} style={{ backgroundColor: 'rgba(26, 107, 255, 0.15)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, marginRight: 8, marginBottom: 8, borderWidth: 1, borderColor: 'rgba(26, 107, 255, 0.3)' }}>
+                  <Text style={{ color: '#1A6BFF', fontFamily: 'Montserrat_700Bold', fontSize: 12 }}>{s}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* LOCATION AS INTERACTIVE MAP TRIGGER */}
+            <Text style={styles.formLabel}>¿Dónde te ubicas?</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+              <TouchableOpacity onPress={() => setShowMapModal(true)} style={[styles.inputContainer, { flex: 1, paddingVertical: 18, marginBottom: 0 }]}>
+                <Feather name="map-pin" size={18} color="#8B8FA8" style={{ marginRight: 10 }} />
+                <Text style={{ flex: 1, color: '#FFF', fontFamily: 'Montserrat_700Bold', fontSize: 13 }} numberOfLines={1}>{location}</Text>
+                <Feather name="chevron-down" size={18} color="#8B8FA8" />
+              </TouchableOpacity>
+              
+              <TouchableOpacity onPress={handleGetLocation} disabled={isLocating} style={{ width: 56, height: 56, backgroundColor: 'rgba(26, 107, 255, 0.15)', borderRadius: 12, marginLeft: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(26, 107, 255, 0.3)' }}>
+                {isLocating ? <ActivityIndicator color="#1A6BFF" size="small" /> : <Feather name="crosshair" size={20} color="#1A6BFF" />}
+              </TouchableOpacity>
+            </View>
+
+            {/* CASA/EDIFICIO DETAILS */}
+            <View style={[styles.inputContainer, { paddingVertical: 12, marginBottom: 25 }]}>
+              <Feather name="home" size={18} color="#8B8FA8" style={{ marginRight: 10 }} />
+              <TextInput 
+                value={addressDetails} 
+                onChangeText={setAddressDetails} 
+                placeholder="Ej: Mz 40, Villa 12, o Edificio Roraima Apt 3" 
+                placeholderTextColor="#5A5E73" 
+                style={{ flex: 1, color: '#FFF', fontFamily: 'Montserrat_400Regular', fontSize: 13 }} 
+              />
+            </View>
+
+            {/* DURATION */}
+            <Text style={styles.formLabel}>¿Cuánto tiempo tomará tu tarea?</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 25 }}>
+              {['1 hora o fracción', '2 - 3 horas', '4 horas o más'].map(opt => (
+                <TouchableOpacity key={opt} onPress={() => setDuration(opt)} style={[styles.choiceBtn, duration === opt && styles.choiceBtnActive]}>
+                  <Text style={[styles.choiceText, duration === opt && styles.choiceTextActive]}>{opt}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* FUNCTIONAL PRICE RANGE SLIDER */}
+            <Text style={styles.formLabel}>Rango de precio a pagar</Text>
+            <View style={{ backgroundColor: '#1C1F2E', borderRadius: 16, padding: 20, marginBottom: 25, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}>
+              
+              <View 
+                style={{ height: 40, justifyContent: 'center', marginBottom: 20 }}
+                onLayout={e => setSliderWidth(e.nativeEvent.layout.width)}
+                onStartShouldSetResponder={() => true}
+                onResponderGrant={handleSliderTouch}
+                onResponderMove={handleSliderTouch}
+              >
+                <View style={{ height: 6, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 3, width: '100%' }} />
+                {sliderWidth > 0 && (() => {
+                  const minL = 10, maxL = 300;
+                  const cMin = Math.max(minL, Math.min(parseInt(priceMin) || minL, maxL));
+                  const cMax = Math.max(minL, Math.min(parseInt(priceMax) || maxL, maxL));
+                  const leftPos = ((cMin - minL) / (maxL - minL)) * sliderWidth;
+                  const rightPos = ((cMax - minL) / (maxL - minL)) * sliderWidth;
+                  return (
+                    <>
+                      <View pointerEvents="none" style={{ position: 'absolute', height: 6, backgroundColor: '#1A6BFF', left: leftPos, width: rightPos - leftPos, borderRadius: 3 }} />
+                      <View pointerEvents="none" style={{ position: 'absolute', left: leftPos - 12, width: 24, height: 24, borderRadius: 12, backgroundColor: '#FFF', shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 3, elevation: 5 }} />
+                      <View pointerEvents="none" style={{ position: 'absolute', left: rightPos - 12, width: 24, height: 24, borderRadius: 12, backgroundColor: '#FFF', shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 3, elevation: 5 }} />
+                    </>
+                  );
+                })()}
+              </View>
+
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
+                  <Text style={{ color: '#8B8FA8', fontSize: 10, fontFamily: 'Montserrat_700Bold', marginBottom: 5 }}>MÍNIMO ($)</Text>
+                  <TextInput value={priceMin} onChangeText={setPriceMin} keyboardType="numeric" style={{ fontSize: 18, fontFamily: 'Montserrat_900Black', color: '#FFF', padding: 0 }} />
+                </View>
+                <Text style={{ color: '#8B8FA8', fontSize: 20, marginHorizontal: 15 }}>-</Text>
+                <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
+                  <Text style={{ color: '#8B8FA8', fontSize: 10, fontFamily: 'Montserrat_700Bold', marginBottom: 5 }}>MÁXIMO ($)</Text>
+                  <TextInput value={priceMax} onChangeText={setPriceMax} keyboardType="numeric" style={{ fontSize: 18, fontFamily: 'Montserrat_900Black', color: '#FFF', padding: 0 }} />
+                </View>
+              </View>
+
+              {(parseInt(priceMin) <= 0 || parseInt(priceMax) <= 0 || parseInt(priceMin) >= parseInt(priceMax)) && (
+                <Text style={{ color: '#FF5C3A', fontFamily: 'Montserrat_700Bold', fontSize: 11, marginTop: 15, textAlign: 'center' }}>⚠️ Por favor agrega un rango de valor válido (mayor a $0 y Máx {">"} Mín).</Text>
+              )}
+            </View>
+
+            {/* DETAILS TEXT AREA */}
+            <Text style={styles.formLabel}>Detalles específicos</Text>
+            <View style={[styles.inputContainer, { height: 120, alignItems: 'flex-start', paddingTop: 10, paddingBottom: 10 }]}>
+              <TextInput 
+                value={details} 
+                onChangeText={setDetails} 
+                multiline 
+                placeholder="Ej: Necesito que traigan su propia escalera..." 
+                placeholderTextColor="#5A5E73" 
+                style={{ flex: 1, width: '100%', color: '#FFF', fontFamily: 'Montserrat_400Regular', fontSize: 14, textAlignVertical: 'top' }} 
+              />
+            </View>
+
+            {/* ATTACHMENTS (PHOTOS/VIDEOS) */}
+            <View style={{ marginBottom: 35 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15 }}>
+                <TouchableOpacity onPress={() => handlePickMedia(true)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(26, 107, 255, 0.15)', paddingHorizontal: 15, paddingVertical: 10, borderRadius: 10, marginRight: 10, borderWidth: 1, borderColor: 'rgba(26, 107, 255, 0.3)' }}>
+                  <Feather name="camera" size={16} color="#1A6BFF" />
+                  <Text style={{ color: '#1A6BFF', fontFamily: 'Montserrat_700Bold', fontSize: 12, marginLeft: 8 }}>Tomar Foto</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={() => handlePickMedia(false)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#1C1F2E', paddingHorizontal: 15, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
+                  <Feather name="image" size={16} color="#8B8FA8" />
+                  <Text style={{ color: '#8B8FA8', fontFamily: 'Montserrat_700Bold', fontSize: 12, marginLeft: 8 }}>Galería</Text>
+                </TouchableOpacity>
+              </View>
+
+              {attachments.length > 0 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexDirection: 'row' }}>
+                  {attachments.map((file, idx) => (
+                    <View key={idx} style={{ position: 'relative', marginRight: 12, width: 80, height: 80, borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                      <Image source={{ uri: file.uri }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
+                      
+                      {file.type === 'video' && (
+                        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+                           <Feather name="play-circle" size={24} color="#FFF" />
+                        </View>
+                      )}
+
+                      <TouchableOpacity onPress={() => removeAttachment(idx)} style={{ position: 'absolute', top: 4, right: 4, backgroundColor: '#FF3B30', width: 22, height: 22, borderRadius: 11, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#0D0F1A' }}>
+                        <Feather name="x" size={12} color="#FFF" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </ScrollView>
+              )}
+            </View>
+
+            <TouchableOpacity 
+              onPress={() => Alert.alert("¡Solicitud enviada!", "Los Taskers recibirán tu solicitud y te contactarán pronto.", [{text: "OK", onPress: () => { setStep('category'); setSelectedSubs([]); setSelectedCategory(null); }}])} 
+              style={{ backgroundColor: '#1A6BFF', padding: 18, borderRadius: 16, alignItems: 'center', marginTop: 15, shadowColor: '#1A6BFF', shadowOpacity: 0.4, shadowRadius: 15, elevation: 8 }}
+            >
+              <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFF', fontSize: 16, textTransform: 'uppercase', letterSpacing: 1 }}>SEND REQUEST</Text>
+            </TouchableOpacity>
+          </ScrollView>
+          
+          {/* INTERACTIVE FULLSCREEN MAP MODAL */}
+          {showMapModal && (
+            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#0D0F1A', zIndex: 200 }}>
+              <View style={{ paddingTop: Platform.OS === 'android' ? 50 : 50, paddingHorizontal: 20, paddingBottom: 15, flexDirection: 'row', alignItems: 'center', backgroundColor: '#0D0F1A', zIndex: 10, shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 10, elevation: 10 }}>
+                <TouchableOpacity onPress={() => setShowMapModal(false)} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#1C1F2E', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}>
+                  <Feather name="arrow-left" size={20} color="#FFF" />
+                </TouchableOpacity>
+                <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFF', fontSize: 18, marginLeft: 15 }}>Fija tu ubicación exacta</Text>
+              </View>
+
+              <View style={{ flex: 1 }}>
+                <MapView 
+                  style={{ flex: 1 }} 
+                  initialRegion={mapRegion}
+                  onRegionChangeComplete={(region) => setMapRegion(region)}
+                  showsUserLocation={true}
+                  userInterfaceStyle="dark"
+                  customMapStyle={[
+                    { "elementType": "geometry", "stylers": [{"color": "#1C1F2E"}] },
+                    { "elementType": "labels.text.fill", "stylers": [{"color": "#8B8FA8"}] },
+                    { "elementType": "labels.text.stroke", "stylers": [{"color": "#0D0F1A"}] },
+                    { "featureType": "road", "elementType": "geometry", "stylers": [{"color": "#0D0F1A"}] },
+                    { "featureType": "water", "elementType": "geometry", "stylers": [{"color": "#1A6BFF"}] }
+                  ]}
+                />
+                
+                {/* FIXED CENTER PIN (UBER STYLE) */}
+                <View style={{ position: 'absolute', top: '50%', left: '50%', marginLeft: -24, marginTop: -48, pointerEvents: 'none', alignItems: 'center' }}>
+                  <View style={{ backgroundColor: '#1A6BFF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginBottom: 5, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 5 }}>
+                    <Text style={{ color: '#FFF', fontFamily: 'Montserrat_700Bold', fontSize: 12 }}>Estoy aquí</Text>
+                  </View>
+                  <View style={{ width: 4, height: 20, backgroundColor: '#1A6BFF', marginBottom: -5 }} />
+                  <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#0D0F1A', borderWidth: 3, borderColor: '#1A6BFF' }} />
+                </View>
+
+                {/* BOTTOM CONFIRM BOX */}
+                <View style={{ position: 'absolute', bottom: 0, width: '100%', backgroundColor: '#1C1F2E', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 30, shadowColor: '#000', shadowOpacity: 1, shadowRadius: 20, elevation: 20 }}>
+                  <Text style={{ color: '#8B8FA8', fontFamily: 'Montserrat_700Bold', fontSize: 13, marginBottom: 15, textAlign: 'center' }}>Mueve el mapa para afinar la ubicación exacta del servicio.</Text>
+                  <TouchableOpacity 
+                    onPress={async () => {
+                      try {
+                        let geocode = await Location.reverseGeocodeAsync({ latitude: mapRegion.latitude, longitude: mapRegion.longitude });
+                        if (geocode && geocode.length > 0) {
+                          const place = geocode[0];
+                          const street = place.street || place.name || '';
+                          const city = place.city || place.subregion || '';
+                          const newLoc = `${street ? street + ', ' : ''}${city}`.trim().replace(/^, |, $/g, '');
+                          setLocation(newLoc || 'Ubicación en mapa');
+                        } else {
+                          setLocation('Ubicación personalizada al pin');
+                        }
+                      } catch (e) {
+                         setLocation('Ubicación en mapa');
+                      }
+                      setShowMapModal(false);
+                    }}
+                    style={{ backgroundColor: '#1A6BFF', padding: 18, borderRadius: 16, alignItems: 'center', shadowColor: '#1A6BFF', shadowOpacity: 0.4, shadowRadius: 10 }}
+                  >
+                    <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFF', fontSize: 16, textTransform: 'uppercase', letterSpacing: 1 }}>CONFIRMAR UBICACIÓN</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          )}
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    );
+  }
+
+  if (selectedCategory) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#0D0F1A' }}>
+        <View style={{ padding: 24, paddingTop: Platform.OS === 'android' ? 60 : 20, flex: 1 }}>
+          
+          {/* SEARCH BAR & BACK BUTTON */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 30 }}>
+            <TouchableOpacity onPress={() => { setSelectedCategory(null); setSelectedSubs([]); setStep('category'); }} style={{ width: 45, height: 45, borderRadius: 23, backgroundColor: '#1C1F2E', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}>
+              <Feather name="arrow-left" size={20} color="#FFF" />
+            </TouchableOpacity>
+            <View style={{ flex: 1, marginLeft: 15, flexDirection: 'row', alignItems: 'center', backgroundColor: '#1C1F2E', borderRadius: 12, paddingHorizontal: 15, height: 45, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}>
+              <Feather name="search" size={18} color="#8B8FA8" />
+              <TextInput placeholder="Busca un servicio..." placeholderTextColor="#8B8FA8" style={{ color: '#FFF', fontFamily: 'Montserrat_400Regular', marginLeft: 10, flex: 1, fontSize: 13 }} />
+            </View>
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+            {/* HEADER */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 25, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', paddingBottom: 20 }}>
+              <Text style={{ fontSize: 26, marginRight: 15, transform: [{rotate: '-15deg'}] }}>{selectedCategory.icon}</Text>
+              <Text style={{ fontFamily: 'Montserrat_900Black', color: '#1A6BFF', fontSize: 24, textTransform: 'uppercase', letterSpacing: 0.5 }}>{selectedCategory.label}</Text>
+            </View>
+            
+            <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#8B8FA8', fontSize: 11, marginBottom: 15, textTransform: 'uppercase', letterSpacing: 0.5 }}>Selecciona uno o más servicios</Text>
+
+            {/* GRID */}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+              {selectedCategory.subs.map((sub, idx) => {
+                const isSelected = selectedSubs.includes(sub.name);
+                return (
+                  <TouchableOpacity 
+                    key={idx} 
+                    style={{ width: '31%', backgroundColor: isSelected ? 'rgba(26, 107, 255, 0.15)' : '#1C1F2E', borderRadius: 12, overflow: 'hidden', borderWidth: 2, borderColor: isSelected ? '#1A6BFF' : 'rgba(255,255,255,0.08)', marginBottom: 15 }}
+                    onPress={() => {
+                      if (selectedCategory.id === 'clases') {
+                        Alert.alert('Próximamente', 'La solicitud de profesores particulares tendrá un formulario especial muy pronto.');
+                      } else {
+                        toggleSub(sub.name);
+                      }
+                    }}
+                  >
+                    <View style={{ height: 80, padding: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: sub.emoji ? 'rgba(255,255,255,0.02)' : 'transparent', borderRadius: 8 }}>
+                      {sub.emoji ? (
+                        <Text style={{ fontSize: 32 }}>{sub.emoji}</Text>
+                      ) : (
+                        <Image source={sub.image} style={{ width: '100%', height: '100%', borderRadius: 8, resizeMode: 'cover', opacity: isSelected ? 0.7 : 1 }} />
+                      )}
+                    </View>
+                    <View style={{ borderTopWidth: 1, borderTopColor: isSelected ? 'rgba(26, 107, 255, 0.2)' : 'rgba(255,255,255,0.05)', paddingVertical: 10, paddingHorizontal: 4, alignItems: 'center' }}>
+                      <Text style={{ fontFamily: 'Montserrat_700Bold', color: isSelected ? '#1A6BFF' : '#FFF', fontSize: 10, textAlign: 'center' }} numberOfLines={2}>{sub.name}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </ScrollView>
+
+          {/* FLOATING ACTION BUTTON FOR MULTI-SELECT */}
+          {selectedSubs.length > 0 && (
+            <View style={{ position: 'absolute', bottom: 30, left: 24, right: 24 }}>
+              <TouchableOpacity onPress={() => setStep('form')} style={{ backgroundColor: '#1A6BFF', padding: 18, borderRadius: 16, alignItems: 'center', shadowColor: '#1A6BFF', shadowOpacity: 0.4, shadowRadius: 15, elevation: 8, flexDirection: 'row', justifyContent: 'center' }}>
+                <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFF', fontSize: 16, textTransform: 'uppercase', letterSpacing: 1, marginRight: 10 }}>Continuar</Text>
+                <View style={{ backgroundColor: '#FFF', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 2 }}>
+                  <Text style={{ color: '#1A6BFF', fontFamily: 'Montserrat_900Black', fontSize: 14 }}>{selectedSubs.length}</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#0D0F1A' }}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* HEADER */}
+        <View style={{ padding: 24, paddingTop: Platform.OS === 'android' ? 60 : 40, zIndex: 10 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <View>
+              <TouchableOpacity onPress={() => setShowLocationMenu(true)} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 13 }}>📍 {location} ▾</Text>
+              </TouchableOpacity>
+              <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#FFF', fontSize: 24, letterSpacing: -0.5 }}>Hola, {userName} 👋</Text>
+            </View>
+            <TouchableOpacity onPress={handleSignOut} style={{ width: 45, height: 45, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 25, alignItems: 'center', justifyContent: 'center' }}>
+              <Feather name="log-out" size={20} color="#FF5C3A" />
+            </TouchableOpacity>
+          </View>
+
+          {/* SEARCH TRIGGER */}
+          <TouchableOpacity onPress={() => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setStep('search'); }} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+            <Feather name="search" size={20} color="#8B8FA8" style={{ marginRight: 10 }} />
+            <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 15 }}>¿Qué servicio necesitas?</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* PROMO BANNER */}
+        <View style={{ marginHorizontal: 24, marginBottom: 30, backgroundColor: '#1A6BFF', borderRadius: 20, padding: 20, overflow: 'hidden' }}>
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, alignSelf: 'flex-start', marginBottom: 10 }}>
+            <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#FFF', fontSize: 11 }}>🔥 Oferta del día</Text>
+          </View>
+          <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#FFF', fontSize: 18, marginBottom: 4 }}>Primer servicio 20% OFF</Text>
+          <Text style={{ fontFamily: 'Montserrat_400Regular', color: 'rgba(255,255,255,0.8)', fontSize: 13 }}>Usa el código SERVI20 al contratar</Text>
+        </View>
+
+        {/* CATEGORIES */}
+        <View style={{ paddingHorizontal: 24, marginBottom: 30 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+            <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFF', fontSize: 18 }}>Categorías</Text>
+            <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', fontSize: 13 }}>Ver todas</Text>
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+            {CATEGORIES.map((cat) => (
+              <TouchableOpacity 
+                key={cat.id} 
+                onPress={() => setSelectedCategory(cat)} 
+                style={{ width: '31%', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16, paddingVertical: 18, alignItems: 'center', marginBottom: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}
+              >
+                <View style={{ width: 56, height: 56, borderRadius: 18, backgroundColor: cat.color + '22', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                  <MaterialCommunityIcons name={cat.iconName} size={30} color={cat.color} />
+                </View>
+                <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#C8CBD8', fontSize: 10, textAlign: 'center', letterSpacing: 0.2 }}>{cat.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* TRUST TRIGGER: VERIFIED TASKERS (TASKRABBIT STYLE) */}
+        <View style={{ paddingHorizontal: 24, marginBottom: 30 }}>
+          <View style={{ width: '100%', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: '#1C1F2E', overflow: 'hidden' }}>
+            <Image 
+              source={require('../../assets/images/Handyman-maintenance-skills.jpg')} 
+              style={{ width: '100%', height: 160, resizeMode: 'cover' }} 
+            />
+            
+            <View style={{ padding: 20 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(34, 197, 94, 0.15)', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+                  <Feather name="shield" size={16} color="#22C55E" />
+                </View>
+                <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFF', fontSize: 18, letterSpacing: -0.5 }}>Taskers Verificados</Text>
+              </View>
+              
+              <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 13, lineHeight: 20, marginBottom: 15 }}>
+                Cada Tasker en ServiTask ha pasado por un riguroso proceso de verificación de identidad para garantizar la seguridad de tu hogar.
+              </Text>
+              
+              <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15, marginBottom: 5 }}>
+                  <Feather name="check" size={14} color="#1A6BFF" style={{ marginRight: 6 }} />
+                  <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#FFF', fontSize: 12 }}>Identidad verificada</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15, marginBottom: 5 }}>
+                  <Feather name="check" size={14} color="#1A6BFF" style={{ marginRight: 6 }} />
+                  <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#FFF', fontSize: 12 }}>Garantía 100%</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+                  <Feather name="check" size={14} color="#1A6BFF" style={{ marginRight: 6 }} />
+                  <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#FFF', fontSize: 12 }}>Reseñas reales</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* POPULAR SERVICES */}
+        <View style={{ paddingHorizontal: 24, paddingBottom: 50 }}>
+          <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFF', fontSize: 18, marginBottom: 15 }}>Proyectos populares</Text>
+          
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <TouchableOpacity style={{ width: '48%', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}>
+              <View style={{ height: 100, backgroundColor: 'rgba(124, 58, 237, 0.15)', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 40 }}>🏠</Text>
+              </View>
+              <View style={{ padding: 12 }}>
+                <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#FFF', fontSize: 13, marginBottom: 4 }}>Limpieza de casa</Text>
+                <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 12 }}>Desde <Text style={{ color: '#7C3AED', fontWeight: 'bold' }}>$20</Text></Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={{ width: '48%', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}>
+              <View style={{ height: 100, backgroundColor: 'rgba(255, 92, 58, 0.15)', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 40 }}>🪑</Text>
+              </View>
+              <View style={{ padding: 12 }}>
+                <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#FFF', fontSize: 13, marginBottom: 4 }}>Armado de muebles</Text>
+                <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 12 }}>Desde <Text style={{ color: '#FF5C3A', fontWeight: 'bold' }}>$35</Text></Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* BOTTOM NAV BAR */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingVertical: 15, backgroundColor: '#0D0F1A', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)' }}>
+        <TouchableOpacity style={{ alignItems: 'center' }}>
+          <Feather name="home" size={24} color="#1A6BFF" />
+          <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', fontSize: 10, marginTop: 4 }}>Inicio</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={{ alignItems: 'center' }}>
+          <Feather name="search" size={24} color="#8B8FA8" />
+          <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 10, marginTop: 4 }}>Buscar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={{ alignItems: 'center' }}>
+          <Feather name="clipboard" size={24} color="#8B8FA8" />
+          <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 10, marginTop: 4 }}>Pedidos</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={{ alignItems: 'center' }}>
+          <Feather name="user" size={24} color="#8B8FA8" />
+          <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 10, marginTop: 4 }}>Perfil</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* BOTTOM SHEET: SAVED LOCATIONS */}
+      {showLocationMenu && (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 300, justifyContent: 'flex-end' }}>
+          <TouchableOpacity style={{ flex: 1 }} onPress={() => setShowLocationMenu(false)} />
+          
+          <View style={{ backgroundColor: '#1C1F2E', borderTopLeftRadius: 35, borderTopRightRadius: 35, padding: 25, paddingBottom: Platform.OS === 'ios' ? 40 : 25, shadowColor: '#000', shadowOpacity: 1, shadowRadius: 20, elevation: 20 }}>
+            {/* Drag Handle */}
+            <View style={{ width: 45, height: 5, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 3, alignSelf: 'center', marginBottom: 25 }} />
+            
+            <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFF', fontSize: 20, marginBottom: 20 }}>Tus direcciones</Text>
+            
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 350 }}>
+              {savedLocations.map(loc => {
+                const isSelected = location === loc.name || location === loc.address || (loc.isCurrent && location === 'Buscando...');
+                return (
+                  <TouchableOpacity 
+                    key={loc.id} 
+                    style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' }}
+                    onPress={() => {
+                      if (loc.isCurrent) {
+                        handleGetLocation(); // Triggers GPS fetch and sets MapModal true
+                        setShowLocationMenu(false);
+                      } else {
+                        setLocation(loc.name);
+                        setShowLocationMenu(false);
+                      }
+                    }}
+                  >
+                    <View style={{ width: 45, height: 45, borderRadius: 23, backgroundColor: 'rgba(255,255,255,0.05)', alignItems: 'center', justifyContent: 'center', marginRight: 15 }}>
+                      <Feather name={loc.icon} size={20} color={loc.isCurrent ? "#1A6BFF" : "#8B8FA8"} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#FFF', fontSize: 15, marginBottom: 3 }}>{loc.name}</Text>
+                      <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 12 }}>{loc.address}</Text>
+                    </View>
+                    {isSelected && (
+                      <Feather name="check-circle" size={20} color="#1A6BFF" />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+              
+              {/* Add New Button */}
+              <TouchableOpacity 
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, marginTop: 5 }}
+                onPress={() => {
+                  setShowLocationMenu(false);
+                  setShowMapModal(true);
+                }}
+              >
+                <View style={{ width: 45, height: 45, borderRadius: 23, backgroundColor: 'rgba(26, 107, 255, 0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 15, borderWidth: 1, borderColor: 'rgba(26, 107, 255, 0.3)' }}>
+                  <Feather name="plus" size={20} color="#1A6BFF" />
+                </View>
+                <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', fontSize: 15 }}>Agregar una nueva ubicación</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      )}
+
+      {/* REUSED MAP MODAL FOR MAIN FEED */}
+      {showMapModal && (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#0D0F1A', zIndex: 350 }}>
+          <View style={{ paddingTop: Platform.OS === 'android' ? 50 : 50, paddingHorizontal: 20, paddingBottom: 15, flexDirection: 'row', alignItems: 'center', backgroundColor: '#0D0F1A', zIndex: 10, shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 10, elevation: 10 }}>
+            <TouchableOpacity onPress={() => setShowMapModal(false)} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#1C1F2E', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}>
+              <Feather name="arrow-left" size={20} color="#FFF" />
+            </TouchableOpacity>
+            <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFF', fontSize: 18, marginLeft: 15 }}>Fija tu ubicación exacta</Text>
+          </View>
+
+          <View style={{ flex: 1 }}>
+            <MapView 
+              style={{ flex: 1 }} 
+              initialRegion={mapRegion}
+              onRegionChangeComplete={(region) => setMapRegion(region)}
+              showsUserLocation={true}
+              userInterfaceStyle="dark"
+              customMapStyle={[
+                { "elementType": "geometry", "stylers": [{"color": "#1C1F2E"}] },
+                { "elementType": "labels.text.fill", "stylers": [{"color": "#8B8FA8"}] },
+                { "elementType": "labels.text.stroke", "stylers": [{"color": "#0D0F1A"}] },
+                { "featureType": "road", "elementType": "geometry", "stylers": [{"color": "#0D0F1A"}] },
+                { "featureType": "water", "elementType": "geometry", "stylers": [{"color": "#1A6BFF"}] }
+              ]}
+            />
+            
+            <View style={{ position: 'absolute', top: '50%', left: '50%', marginLeft: -24, marginTop: -48, pointerEvents: 'none', alignItems: 'center' }}>
+              <View style={{ backgroundColor: '#1A6BFF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginBottom: 5, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 5 }}>
+                <Text style={{ color: '#FFF', fontFamily: 'Montserrat_700Bold', fontSize: 12 }}>Estoy aquí</Text>
+              </View>
+              <View style={{ width: 4, height: 20, backgroundColor: '#1A6BFF', marginBottom: -5 }} />
+              <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#0D0F1A', borderWidth: 3, borderColor: '#1A6BFF' }} />
+            </View>
+
+            <View style={{ position: 'absolute', bottom: 0, width: '100%', backgroundColor: '#1C1F2E', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 30, shadowColor: '#000', shadowOpacity: 1, shadowRadius: 20, elevation: 20 }}>
+              <Text style={{ color: '#8B8FA8', fontFamily: 'Montserrat_700Bold', fontSize: 13, marginBottom: 15, textAlign: 'center' }}>Mueve el mapa para afinar la ubicación exacta del servicio.</Text>
+              <TouchableOpacity 
+                onPress={async () => {
+                  try {
+                    let geocode = await Location.reverseGeocodeAsync({ latitude: mapRegion.latitude, longitude: mapRegion.longitude });
+                    if (geocode && geocode.length > 0) {
+                      const place = geocode[0];
+                      const street = place.street || place.name || '';
+                      const city = place.city || place.subregion || '';
+                      const newLoc = `${street ? street + ', ' : ''}${city}`.trim().replace(/^, |, $/g, '');
+                      setLocation(newLoc || 'Ubicación en mapa');
+                      
+                      setSavedLocations(prev => {
+                        if(prev.find(p => p.name === newLoc)) return prev;
+                        const newEntry = { id: Date.now().toString(), name: newLoc, address: 'Ubicación seleccionada en mapa', icon: 'map-pin' };
+                        return [...prev, newEntry];
+                      });
+                    } else {
+                      setLocation('Ubicación personalizada');
+                    }
+                  } catch (e) {
+                     setLocation('Ubicación en mapa');
+                  }
+                  setShowMapModal(false);
+                }}
+                style={{ backgroundColor: '#1A6BFF', padding: 18, borderRadius: 16, alignItems: 'center', shadowColor: '#1A6BFF', shadowOpacity: 0.4, shadowRadius: 10 }}
+              >
+                <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFF', fontSize: 16, textTransform: 'uppercase', letterSpacing: 1 }}>CONFIRMAR UBICACIÓN</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+    </SafeAreaView>
+  );
+}
+
+// ══════════════════════════════════════════
+// AUTHENTICATION SCREEN
+// ══════════════════════════════════════════
+function AuthScreen({ setSession }) {
+  const [mode, setModeState] = useState('welcome'); 
+  const fadeAnim = React.useRef(new Animated.Value(1)).current;
+  const imageFadeAnim = React.useRef(new Animated.Value(0)).current;
+
+  const onImageLoad = () => {
+    Animated.timing(imageFadeAnim, {
+      toValue: 1,
+      duration: 1200,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  
+  const [birthDate, setBirthDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [dateIsSet, setDateIsSet] = useState(false);
+  
+  const [frontId, setFrontId] = useState(null);
+  const [backId, setBackId] = useState(null);
+  const [selfie, setSelfie] = useState(null);
+
+  const [isLocating, setIsLocating] = useState(false);
+  const [showMapModal, setShowMapModal] = useState(false);
+  const [mapRegion, setMapRegion] = useState({ latitude: -2.1894, longitude: -79.8890, latitudeDelta: 0.05, longitudeDelta: 0.05 });
+  const [authLocation, setAuthLocation] = useState('Ubicación personalizada');
+
+  const hasMinLength = password.length >= 8;
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+  // Transition Engine (True Fade Animation)
+  const setMode = (newMode) => {
+    if (Platform.OS === 'android') {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    }
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => {
+      setModeState(newMode);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    });
+  };
+  
+  const Requirement = ({ met, text }) => (
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+      <Feather name={met ? "check-circle" : "circle"} size={14} color={met ? "#22C55E" : "#8B8FA8"} />
+      <Text style={{ color: met ? '#FFF' : '#8B8FA8', marginLeft: 8, fontSize: 13, fontFamily: 'Montserrat_400Regular' }}>{text}</Text>
+    </View>
+  );
+
+  const onDateChange = (event, selectedDate) => {
+    if (Platform.OS === 'android') setShowDatePicker(false);
+    if (selectedDate) {
+      setBirthDate(selectedDate);
+      setDateIsSet(true);
+    }
+  };
+
+  const formatDate = (date) => {
+    let day = date.getDate().toString().padStart(2, '0');
+    let month = (date.getMonth() + 1).toString().padStart(2, '0');
+    let year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  const pickImage = async (setImage) => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.7,
+    });
+    if (!result.canceled) setImage(result.assets[0].uri);
+  };
+
+  const handleGetLocation = async () => {
+    try {
+      setIsLocating(true);
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('GPS Obligatorio 📍', 'Por favor habilita el GPS para encontrar tu ubicación exacta.');
+        setIsLocating(false);
+        return;
+      }
+      let locationObj = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      setMapRegion({ latitude: locationObj.coords.latitude, longitude: locationObj.coords.longitude, latitudeDelta: 0.005, longitudeDelta: 0.005 });
+      setShowMapModal(true);
+    } catch (err) {
+      setShowMapModal(true);
+    } finally {
+      setIsLocating(false);
+    }
+  };
+
+  const Stepper = ({ step, title, subtitle }) => (
+    <View style={{ alignItems: 'center', marginBottom: 25, marginTop: 10 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+        <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#1A6BFF', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
+          <Feather name={step > 1 ? "check" : "user"} size={14} color="#FFF" />
+        </View>
+        <View style={{ width: 35, height: 3, backgroundColor: step >= 2 ? '#1A6BFF' : 'rgba(255,255,255,0.1)', marginLeft: -5, marginRight: -5, zIndex: 1 }} />
+        <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: step >= 2 ? '#1A6BFF' : 'transparent', borderWidth: step >= 2 ? 0 : 2, borderColor: step >= 2 ? 'transparent' : 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
+          <Feather name={step > 2 ? "check" : "map-pin"} size={14} color={step >= 2 ? "#FFF" : "#8B8FA8"} />
+        </View>
+        <View style={{ width: 35, height: 3, backgroundColor: step >= 3 ? '#1A6BFF' : 'rgba(255,255,255,0.1)', marginLeft: -5, marginRight: -5, zIndex: 1 }} />
+        <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: step >= 3 ? '#1A6BFF' : 'transparent', borderWidth: step >= 3 ? 0 : 2, borderColor: step >= 3 ? 'transparent' : 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
+          <Feather name="camera" size={14} color={step >= 3 ? "#FFF" : "#8B8FA8"} />
+        </View>
+      </View>
+      <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFF', fontSize: 18, marginBottom: 4 }}>{title}</Text>
+      {subtitle && <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 13, textAlign: 'center' }}>{subtitle}</Text>}
+    </View>
+  );
+
+  const goBack = () => {
+    if (mode === 'login' || mode === 'register_step1') setMode('welcome');
+    else if (mode === 'register_step2') setMode('register_step1');
+    else if (mode === 'register_step3') setMode('register_step2');
+    else if (mode === 'forgot_password') setMode('login');
+    else if (mode === 'verify_otp') setMode('welcome');
+  };
+
+  const validateStep1AndProceed = () => {
+    // Name validation
+    const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+    const nameTrimmed = name.trim();
+    if (!nameTrimmed) return Alert.alert("Falta el nombre", "Ingresa tu nombre completo para continuar.");
+    if (!nameRegex.test(nameTrimmed)) return Alert.alert("Nombre no válido", "El nombre no puede contener números ni símbolos.");
+    if (nameTrimmed.split(' ').length < 2) return Alert.alert("Nombre incompleto", "Por favor ingresa al menos un nombre y un apellido.");
+
+    // Email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) return Alert.alert("Correo inválido", "Por favor escribe correctamente un correo válido.");
+    
+    // Birthday
+    if (!dateIsSet) return Alert.alert("Falta Edad", "Por favor confirma tu fecha de nacimiento en el calendario.");
+
+    // Password
+    if (!hasMinLength || !hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
+      return Alert.alert("Contraseña débil", "Debes cumplir con todos los requisitos de seguridad en color verde.");
+    }
+    if (password !== confirmPassword) return Alert.alert("Contraseñas no coinciden", "Por favor verifica que escribiste la misma contraseña en ambos campos.");
+
+    setMode('register_step2');
+  };
+
+  const handleSignUp = async () => {
+    if (!frontId || !backId || !selfie) {
+      Alert.alert("Faltan Documentos", "Debes adjuntar las tres fotos requeridas por seguridad.");
+      return;
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email: email, password: password,
+      options: { data: { full_name: name, birth_date: birthDate, location: authLocation } }
+    });
+    
+    if (error) {
+      Alert.alert("Error de registro", error.message);
+    } else if (data?.user?.identities && data.user.identities.length === 0) {
+      // Supabase anti-spam security check: identities is empty if email already exists
+      Alert.alert(
+        "¡Correo en uso! ⚠️", 
+        "Este correo electrónico ya está registrado en SERVITASK. Por favor, intenta conectar desde Iniciar Sesión o usa un correo totalmente nuevo."
+      );
+    } else {
+      setMode('verify_otp');
+    }
+  };
+
+  const handleLogin = async () => {
+    if (!email || !password) return Alert.alert("Datos incompletos", "Por favor ingresa tu correo y contraseña.");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) return Alert.alert("Correo inválido", "El formato del correo es incorrecto.");
+    
+    // Cuenta DEMO secreta para pruebas rápidas
+    if (email.toLowerCase() === 'demo@servitask.com' && password === '123456') {
+      if (setSession) setSession({ user: { user_metadata: { full_name: 'Daniel (Demo)' } } });
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email, password: password,
+    });
+    if (error) Alert.alert("Error", "Correo o contraseña incorrectos.");
+  };
+
+  const handleVerifyOtp = async () => {
+    const { error } = await supabase.auth.verifyOtp({
+      email: email, token: otpCode, type: 'signup'
+    });
+    if (error) Alert.alert("Código Inválido", "El código ingresado es incorrecto o expiró.");
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) return Alert.alert("Ops", "Ingresa por favor tu correo electrónico antes de pedir recuperación.");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) return Alert.alert("Correo inválido", "Verifica el formato del correo.");
+    
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    if (error) Alert.alert("Error", error.message);
+    else Alert.alert("Enviado", "Revisa tu buzón para el enlace mágico.");
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const redirectUrl = Linking.createURL('/');
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (error) {
+        Alert.alert("Google Error", error.message);
+        return;
+      }
+
+      if (data?.url) {
+        const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+        if (result.type === 'success' && result.url) {
+          const hashArr = result.url.split('#');
+          if (hashArr.length > 1) {
+            const queryParams = hashArr[1].split('&').reduce((acc, current) => {
+              const [key, value] = current.split('=');
+              acc[key] = value;
+              return acc;
+            }, {});
+            if (queryParams.access_token) {
+              await supabase.auth.setSession({ 
+                access_token: queryParams.access_token, 
+                refresh_token: queryParams.refresh_token 
+              });
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.log("Google SignIn Cancelled:", e);
+    }
+  };
+
+  if (mode === 'welcome') {
+    return (
+      <Animated.View style={[styles.welcomeContainer, { opacity: fadeAnim }]}>
+        <View style={styles.heroSection}>
+          <Animated.Image 
+            source={require('../../assets/images/auth_hero_vector.png')} 
+            style={[styles.heroImage, { opacity: imageFadeAnim }]} 
+            onLoad={onImageLoad} 
+          />
+          <View style={styles.heroOverlay} />
+          <View style={styles.heroLogoContainer}>
+             <Image source={require('../../assets/images/logo2.png')} style={{ width: 470, height: 175, resizeMode: 'contain' }} />
+          </View>
+          
+          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 75 }}>
+            {Array.from({ length: 25 }).map((_, i) => (
+              <View key={i} style={{ height: 3, backgroundColor: `rgba(13, 15, 26, ${(i + 1) / 25})` }} />
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.bottomSheet}>
+          <Text style={styles.bottomSheetTitle}>Elige cómo quieres ingresar</Text>
+          <TouchableOpacity style={[styles.socialButton, {backgroundColor: '#FFF', shadowColor: '#000', shadowOffset: {width:0, height:4}, shadowOpacity: 0.15, shadowRadius: 10, elevation: 4}]} onPress={handleGoogleLogin}>
+            <View style={styles.socialIconWrapper}><Ionicons name="logo-google" size={20} color="#000" /></View>
+            <Text style={[styles.socialButtonText, {color: '#000'}]}>Continuar con Google</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.socialButton, {backgroundColor: '#000', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)'}]} onPress={() => Alert.alert("Apple", "Próximamente")}>
+            <View style={styles.socialIconWrapper}><Ionicons name="logo-apple" size={20} color="#FFF" /></View>
+            <Text style={[styles.socialButtonText, {color: '#FFF'}]}>Continuar con Apple</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.socialButton, {backgroundColor: 'transparent', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.2)', marginTop: 10}]} onPress={() => setMode('login')}>
+            <Text style={[styles.socialButtonText, {color: '#FFF'}]}>Ingresar con Correo</Text>
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <TouchableOpacity style={styles.backButton} onPress={goBack}>
+        <Text style={styles.backButtonText}>← Atrás</Text>
+      </TouchableOpacity>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          
+          <View style={styles.header}>
+            <Image source={require('../../assets/images/logo2.png')} style={{ width: 350, height: 120, resizeMode: 'contain', marginBottom: 15, transform: [{ scale: 1.2 }] }} />
+          </View>
+
+          <Animated.View style={[styles.formContainer, { opacity: fadeAnim }]}>
+            {mode === 'login' && (
+              <View>
+                <Text style={styles.label}>Correo electrónico</Text>
+                <TextInput style={[styles.input, { color: '#FFFFFF' }]} placeholder="correo@ejemplo.com" placeholderTextColor="#8B8FA8" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
+                <Text style={styles.label}>Contraseña</Text>
+                <TextInput style={[styles.input, { color: '#FFFFFF' }]} placeholder="••••••••" placeholderTextColor="#8B8FA8" secureTextEntry value={password} onChangeText={setPassword} />
+                <TouchableOpacity style={{ alignItems: 'flex-end', marginBottom: 25 }} onPress={() => setMode('forgot_password')}><Text style={{ fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', fontSize: 13 }}>¿Olvidaste tu clave?</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.primaryButton} onPress={handleLogin}><Text style={styles.primaryButtonText}>Entrar</Text></TouchableOpacity>
+                <TouchableOpacity style={[styles.primaryButton, { backgroundColor: 'transparent', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }]} onPress={() => setMode('register_step1')}><Text style={[styles.primaryButtonText, { color: '#8B8FA8' }]}>Registrarme</Text></TouchableOpacity>
+              </View>
+            )}
+
+            {mode === 'register_step1' && (
+              <View>
+                <Stepper step={1} title="Datos Personales" subtitle="Información básica de tu cuenta" />
+                
+                <Text style={styles.label}>Nombre completo</Text>
+                <TextInput style={[styles.input, { color: '#FFFFFF' }]} placeholder="Ej. Daniel Alarcón" placeholderTextColor="#8B8FA8" value={name} onChangeText={setName} />
+
+                <Text style={styles.label}>Fecha de Nacimiento</Text>
+                <TouchableOpacity style={styles.datePickerButton} onPress={() => setShowDatePicker(true)}>
+                  <Text style={{ fontFamily: 'Montserrat_400Regular', color: dateIsSet ? '#FFFFFF' : '#8B8FA8', fontSize: 15 }}>
+                     {dateIsSet ? formatDate(birthDate) : "Toca para abrir calendario 📅"}
+                  </Text>
+                </TouchableOpacity>
+
+                {showDatePicker && (
+                  <DateTimePicker value={birthDate} mode="date" display="spinner" maximumDate={new Date()} onChange={onDateChange} textColor="#FFF" />
+                )}
+                
+                {Platform.OS === 'ios' && showDatePicker && (
+                  <TouchableOpacity style={{backgroundColor: '#1A6BFF', padding: 10, borderRadius: 8, alignItems:'center', marginBottom:20}} onPress={() => setShowDatePicker(false)}>
+                    <Text style={{fontFamily: 'Montserrat_700Bold', color:'#FFF'}}>Confirmar Fecha</Text>
+                  </TouchableOpacity>
+                )}
+
+                <Text style={styles.label}>Correo electrónico</Text>
+                <TextInput style={[styles.input, { color: '#FFFFFF' }]} placeholder="correo@ejemplo.com" placeholderTextColor="#8B8FA8" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
+
+                <Text style={styles.label}>Crea tu Contraseña</Text>
+                <TextInput style={[styles.input, { color: '#FFFFFF', marginBottom: 10 }]} placeholder="••••••••" placeholderTextColor="#8B8FA8" secureTextEntry value={password} onChangeText={setPassword} />
+
+                <View style={{ marginBottom: 20, backgroundColor: 'rgba(0,0,0,0.2)', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}>
+                  <Text style={{ color: '#FFF', fontFamily: 'Montserrat_700Bold', marginBottom: 10, fontSize: 13 }}>Tu contraseña debe contener:</Text>
+                  <Requirement met={hasUpperCase} text="1 Letra mayúscula" />
+                  <Requirement met={hasLowerCase} text="1 Letra minúscula" />
+                  <Requirement met={hasNumber} text="1 Número" />
+                  <Requirement met={hasSpecialChar} text="1 Carácter especial (ej. !?<>@#$%)" />
+                  <Requirement met={hasMinLength} text="8 Caracteres o más" />
+                </View>
+
+                <Text style={styles.label}>Confirmar Contraseña</Text>
+                <TextInput style={[styles.input, { color: '#FFFFFF' }]} placeholder="••••••••" placeholderTextColor="#8B8FA8" secureTextEntry value={confirmPassword} onChangeText={setConfirmPassword} />
+
+                <TouchableOpacity style={styles.primaryButton} onPress={validateStep1AndProceed}>
+                  <Text style={styles.primaryButtonText}>Siguiente Paso ➔</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {mode === 'register_step2' && (
+              <View>
+                <Stepper step={2} title="Tu Dirección" subtitle="Esta ubicación es un referente para conectarte cerca" />
+                
+                <Text style={[styles.label, {marginTop: 10}]}>¿Dónde te ubicas?</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 25 }}>
+                  <TouchableOpacity onPress={() => setShowMapModal(true)} style={[styles.inputContainer, { flex: 1, paddingVertical: 18, marginBottom: 0 }]}>
+                    <Feather name="map-pin" size={18} color="#8B8FA8" style={{ marginRight: 10 }} />
+                    <Text style={{ flex: 1, color: '#FFF', fontFamily: 'Montserrat_700Bold', fontSize: 13 }} numberOfLines={1}>{authLocation}</Text>
+                    <Feather name="chevron-down" size={18} color="#8B8FA8" />
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity onPress={handleGetLocation} disabled={isLocating} style={{ width: 56, height: 56, backgroundColor: 'rgba(26, 107, 255, 0.15)', borderRadius: 12, marginLeft: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(26, 107, 255, 0.3)' }}>
+                    {isLocating ? <ActivityIndicator color="#1A6BFF" size="small" /> : <Feather name="crosshair" size={20} color="#1A6BFF" />}
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity style={styles.primaryButton} onPress={() => setMode('register_step3')}>
+                  <Text style={styles.primaryButtonText}>Siguiente Paso ➔</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {mode === 'register_step3' && (
+              <View>
+                <Stepper step={3} title="Verificación de Identidad" subtitle="Toca los botones para adjuntar las fotos de tus documentos" />
+                
+                <Text style={styles.label}>Foto Frontal de Cédula</Text>
+                <TouchableOpacity style={styles.imagePicker} onPress={() => pickImage(setFrontId)}>
+                  {frontId ? <Image source={{ uri: frontId }} style={styles.imagePreview} /> : <Text style={styles.imagePickerText}>📷 Adjuntar frontal</Text>}
+                </TouchableOpacity>
+
+                <Text style={styles.label}>Foto Trasera de Cédula</Text>
+                <TouchableOpacity style={styles.imagePicker} onPress={() => pickImage(setBackId)}>
+                  {backId ? <Image source={{ uri: backId }} style={styles.imagePreview} /> : <Text style={styles.imagePickerText}>📷 Adjuntar trasera</Text>}
+                </TouchableOpacity>
+
+                <Text style={styles.label}>Selfie Sosteniendo Tu Cédula</Text>
+                <TouchableOpacity style={styles.imagePicker} onPress={() => pickImage(setSelfie)}>
+                  {selfie ? <Image source={{ uri: selfie }} style={styles.imagePreview} /> : <Text style={styles.imagePickerText}>🤳 Subir selfie</Text>}
+                </TouchableOpacity>
+
+                <TouchableOpacity style={[styles.primaryButton, { backgroundColor: '#22C55E' }]} onPress={handleSignUp}>
+                  <Text style={styles.primaryButtonText}>Crear Cuenta de SERVITASK</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {mode === 'verify_otp' && (
+               <View style={{ alignItems: 'center' }}>
+                <View style={{ backgroundColor: 'rgba(26, 107, 255, 0.1)', padding: 20, borderRadius: 100, marginBottom: 20 }}>
+                  <Text style={{ fontSize: 40 }}>✉️</Text>
+                </View>
+                <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#FFF', fontSize: 24, marginBottom: 10 }}>Verifica tu correo</Text>
+                <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', textAlign: 'center', marginBottom: 30, fontSize: 15, lineHeight: 22 }}>
+                  Hemos enviado un código mágico de 6 dígitos a: {"\n"}<Text style={{color: '#1A6BFF', fontWeight: 'bold'}}>{email}</Text>
+                </Text>
+
+                <TextInput 
+                  style={[styles.input, { color: '#FFFFFF', fontSize: 32, textAlign: 'center', letterSpacing: 15, width: '100%', marginBottom: 30 }]} 
+                  placeholder="000000" 
+                  placeholderTextColor="rgba(139, 143, 168, 0.3)" 
+                  keyboardType="numeric" 
+                  maxLength={6}
+                  value={otpCode} 
+                  onChangeText={setOtpCode} 
+                />
+
+                <TouchableOpacity style={styles.primaryButton} onPress={handleVerifyOtp}>
+                  <Text style={styles.primaryButtonText}>Verificar Código</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {mode === 'forgot_password' && (
+              <View>
+                <Text style={styles.label}>Correo para recuperar</Text>
+                <TextInput style={[styles.input, { color: '#FFFFFF' }]} placeholder="correo@gmail.com" placeholderTextColor="#8B8FA8" autoCapitalize="none" value={email} onChangeText={setEmail} />
+                <TouchableOpacity style={styles.primaryButton} onPress={handleForgotPassword}><Text style={styles.primaryButtonText}>Enviar Enlace</Text></TouchableOpacity>
+              </View>
+            )}
+          </Animated.View>
+        </ScrollView>
+
+        {/* INTERACTIVE FULLSCREEN MAP MODAL (AUTH) */}
+        {showMapModal && (
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#0D0F1A', zIndex: 200 }}>
+            <View style={{ paddingTop: Platform.OS === 'android' ? 50 : 50, paddingHorizontal: 20, paddingBottom: 15, flexDirection: 'row', alignItems: 'center', backgroundColor: '#0D0F1A', zIndex: 10, shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 10, elevation: 10 }}>
+              <TouchableOpacity onPress={() => setShowMapModal(false)} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#1C1F2E', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}>
+                <Feather name="arrow-left" size={20} color="#FFF" />
+              </TouchableOpacity>
+              <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFF', fontSize: 18, marginLeft: 15 }}>Fija tu ubicación exacta</Text>
+            </View>
+
+            <View style={{ flex: 1 }}>
+              <MapView 
+                style={{ flex: 1 }} 
+                initialRegion={mapRegion}
+                onRegionChangeComplete={(region) => setMapRegion(region)}
+                showsUserLocation={true}
+                userInterfaceStyle="dark"
+                customMapStyle={[
+                  { "elementType": "geometry", "stylers": [{"color": "#1C1F2E"}] },
+                  { "elementType": "labels.text.fill", "stylers": [{"color": "#8B8FA8"}] },
+                  { "elementType": "labels.text.stroke", "stylers": [{"color": "#0D0F1A"}] },
+                  { "featureType": "road", "elementType": "geometry", "stylers": [{"color": "#0D0F1A"}] },
+                  { "featureType": "water", "elementType": "geometry", "stylers": [{"color": "#1A6BFF"}] }
+                ]}
+              />
+              
+              <View style={{ position: 'absolute', top: '50%', left: '50%', marginLeft: -24, marginTop: -48, pointerEvents: 'none', alignItems: 'center' }}>
+                <View style={{ backgroundColor: '#1A6BFF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginBottom: 5, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 5 }}>
+                  <Text style={{ color: '#FFF', fontFamily: 'Montserrat_700Bold', fontSize: 12 }}>Estoy aquí</Text>
+                </View>
+                <View style={{ width: 4, height: 20, backgroundColor: '#1A6BFF', marginBottom: -5 }} />
+                <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#0D0F1A', borderWidth: 3, borderColor: '#1A6BFF' }} />
+              </View>
+
+              <View style={{ position: 'absolute', bottom: 0, width: '100%', backgroundColor: '#1C1F2E', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 30, shadowColor: '#000', shadowOpacity: 1, shadowRadius: 20, elevation: 20 }}>
+                <Text style={{ color: '#8B8FA8', fontFamily: 'Montserrat_700Bold', fontSize: 13, marginBottom: 15, textAlign: 'center' }}>Mueve el mapa para afinar tu ubicación y conectar cerca.</Text>
+                <TouchableOpacity 
+                  onPress={async () => {
+                    try {
+                      let geocode = await Location.reverseGeocodeAsync({ latitude: mapRegion.latitude, longitude: mapRegion.longitude });
+                      if (geocode && geocode.length > 0) {
+                        const place = geocode[0];
+                        const street = place.street || place.name || '';
+                        const city = place.city || place.subregion || '';
+                        const newLoc = `${street ? street + ', ' : ''}${city}`.trim().replace(/^, |, $/g, '');
+                        setAuthLocation(newLoc || 'Ubicación en mapa');
+                      } else {
+                        setAuthLocation('Ubicación personalizada al pin');
+                      }
+                    } catch (e) {
+                       setAuthLocation('Ubicación en mapa');
+                    }
+                    setShowMapModal(false);
+                  }}
+                  style={{ backgroundColor: '#1A6BFF', padding: 18, borderRadius: 16, alignItems: 'center', shadowColor: '#1A6BFF', shadowOpacity: 0.4, shadowRadius: 10 }}
+                >
+                  <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFF', fontSize: 16, textTransform: 'uppercase', letterSpacing: 1 }}>CONFIRMAR UBICACIÓN</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+// ══════════════════════════════════════════
+// MAIN APP ROUTER (Decides Auth vs Home)
+// ══════════════════════════════════════════
+export default function App() {
+  let [fontsLoaded] = useFonts({ Montserrat_400Regular, Montserrat_700Bold, Montserrat_900Black });
+  const [session, setSession] = useState(null);
+  const [sessionChecked, setSessionChecked] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setSessionChecked(true);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (!sessionChecked || !fontsLoaded) {
+    return <View style={{ flex: 1, backgroundColor: '#0D0F1A', justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator color="#1A6BFF" size="large" /></View>;
+  }
+
+  if (session && session.user) {
+    return <HomeScreen session={session} setSession={setSession} />;
+  }
+
+  return <AuthScreen setSession={setSession} />;
+}
+
+const styles = StyleSheet.create({
+  welcomeContainer: { flex: 1, backgroundColor: '#0D0F1A' },
+  heroSection: { flex: 1, position: 'relative', justifyContent: 'center', alignItems: 'center' },
+  heroImage: { position: 'absolute', width: '100%', height: '100%', resizeMode: 'cover' },
+  heroOverlay: { position: 'absolute', width: '100%', height: '100%', backgroundColor: 'rgba(13, 15, 26, 0.65)' },
+  heroLogoContainer: { position: 'absolute', alignItems: 'center', bottom: -5, zIndex: 10 },
+  heroLogoText: { fontFamily: 'Montserrat_900Black', fontSize: 50, color: '#FFF', letterSpacing: -1, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: {width: 0, height: 2}, textShadowRadius: 10 },
+  bottomSheet: { backgroundColor: '#0D0F1A', paddingHorizontal: 24, paddingTop: 36, paddingBottom: 55, borderTopLeftRadius: 40, borderTopRightRadius: 40, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)' },
+  bottomSheetTitle: { fontFamily: 'Montserrat_900Black', color: '#FFF', fontSize: 21, marginBottom: 28, textAlign: 'center', letterSpacing: -0.5 },
+  socialButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 30, marginBottom: 12 },
+  socialIconWrapper: { position: 'absolute', left: 24 },
+  socialButtonText: { fontFamily: 'Montserrat_700Bold', fontSize: 16 },
+
+  container: { flex: 1, backgroundColor: '#0D0F1A' },
+  backButton: { position: 'absolute', top: Platform.OS === 'ios' ? 60 : 40, left: 20, zIndex: 10, padding: 10, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 8 },
+  backButtonText: { fontFamily: 'Montserrat_700Bold', color: '#8B8FA8' },
+  scrollContent: { flexGrow: 1, justifyContent: 'center', paddingBottom: 40 },
+  header: { paddingTop: 80, paddingBottom: 30, alignItems: 'center' },
+  icon: { fontSize: 48, marginBottom: 10 },
+  logo: { fontFamily: 'Montserrat_900Black', fontSize: 32, color: '#FFF', letterSpacing: -1 },
+  logoHighlight: { color: '#1A6BFF' },
+  formContainer: { paddingHorizontal: 24, width: '100%', maxWidth: 450, alignSelf: 'center' },
+  label: { fontFamily: 'Montserrat_700Bold', color: '#8B8FA8', fontSize: 12, marginBottom: 8, textTransform: 'uppercase' },
+  input: { fontFamily: 'Montserrat_400Regular', color: '#FFF', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.13)', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 18, fontSize: 15 },
+  datePickerButton: { backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.13)', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 16, marginBottom: 18, justifyContent: 'center' },
+  imagePicker: { width: '100%', height: 110, backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 2, borderColor: 'rgba(255,255,255,0.1)', borderStyle: 'dashed', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 20, overflow: 'hidden' },
+  imagePreview: { width: '100%', height: '100%', resizeMode: 'cover' },
+  imagePickerText: { fontFamily: 'Montserrat_700Bold', color: '#1A6BFF' },
+  primaryButton: { backgroundColor: '#1A6BFF', padding: 16, borderRadius: 10, alignItems: 'center', width: '100%', marginBottom: 15 },
+  primaryButtonText: { fontFamily: 'Montserrat_700Bold', color: '#FFF', fontSize: 16 },
+
+  // Request Form Styles
+  formLabel: { fontFamily: 'Montserrat_900Black', color: '#FFF', fontSize: 13, marginBottom: 15, textTransform: 'uppercase', letterSpacing: 0.5 },
+  inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1C1F2E', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 25, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+  choiceBtn: { width: '31%', backgroundColor: '#1C1F2E', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 5, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  choiceBtnActive: { backgroundColor: 'rgba(26, 107, 255, 0.15)', borderColor: '#1A6BFF', borderWidth: 2 },
+  choiceText: { color: '#8B8FA8', fontFamily: 'Montserrat_700Bold', fontSize: 11, textAlign: 'center' },
+  choiceTextActive: { color: '#FFF' }
+});
