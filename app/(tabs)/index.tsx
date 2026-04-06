@@ -127,12 +127,60 @@ function HomeScreen({ session, setSession }) {
   const [priceMin, setPriceMin] = useState('20');
   const [priceMax, setPriceMax] = useState('50');
   const [details, setDetails] = useState('');
-  const [needsMeasurements, setNeedsMeasurements] = useState('NO');
+  const [needsMeasurements, setNeedsMeasurements] = useState('');
   const [attachments, setAttachments] = useState([]);
+  
+  // Custom measurements state
+  const [whatToMeasure, setWhatToMeasure] = useState([]);
+  const [customMeasurement, setCustomMeasurement] = useState('');
+  const [specificTools, setSpecificTools] = useState('');
+  const [measurePriceMin, setMeasurePriceMin] = useState('5.00');
+  const [measurePriceMax, setMeasurePriceMax] = useState('25.00');
+  const [measureSliderWidth, setMeasureSliderWidth] = useState(0);
   
   const [sliderWidth, setSliderWidth] = useState(0);
 
+  const resetFormState = () => {
+    setLocation('Ubicación actual en mapa');
+    setAddressDetails('');
+    setDuration('1 hora o fracción');
+    setPriceMin('20');
+    setPriceMax('50');
+    setDetails('');
+    setNeedsMeasurements('');
+    setAttachments([]);
+    setWhatToMeasure([]);
+    setCustomMeasurement('');
+    setSpecificTools('');
+    setMeasurePriceMin('5.00');
+    setMeasurePriceMax('25.00');
+  };
+
   const PROVINCES = ["Azuay", "Bolívar", "Cañar", "Carchi", "Chimborazo", "Cotopaxi", "El Oro", "Esmeraldas", "Galápagos", "Guayas", "Imbabura", "Loja", "Los Ríos", "Manabí", "Morona Santiago", "Napo", "Orellana", "Pastaza", "Pichincha", "Santa Elena", "Santo Domingo", "Sucumbíos", "Tungurahua", "Zamora Chinchipe"];
+
+  const toggleMeasurement = (item) => {
+    if (whatToMeasure.includes(item)) {
+      setWhatToMeasure(whatToMeasure.filter(i => i !== item));
+    } else {
+      setWhatToMeasure([...whatToMeasure, item]);
+    }
+  };
+
+  const handleMeasureSliderTouch = (e) => {
+    if (measureSliderWidth === 0) return;
+    const locX = Math.max(0, Math.min(e.nativeEvent.locationX, measureSliderWidth));
+    const minLimit = 5, maxLimit = 50;
+    const val = Math.round((locX / measureSliderWidth) * (maxLimit - minLimit) + minLimit);
+    
+    const curMin = parseInt(measurePriceMin) || minLimit;
+    const curMax = parseInt(measurePriceMax) || maxLimit;
+
+    if (Math.abs(val - curMin) < Math.abs(val - curMax)) {
+      setMeasurePriceMin(String(Math.min(val, curMax - 5)) + '.00');
+    } else {
+      setMeasurePriceMax(String(Math.max(val, curMin + 5)) + '.00');
+    }
+  };
 
   const handleSliderTouch = (e) => {
     if (sliderWidth === 0) return;
@@ -292,7 +340,7 @@ function HomeScreen({ session, setSession }) {
         client_id: session.user.id,
         category: selectedCategory.id,
         subcategory: selectedSubs.join(', '),
-        details: needsMeasurements === 'SÍ' ? `[MEDIDAS EXACTAS REQUERIDAS] - ${details}` : details,
+        details: needsMeasurements === 'SÍ' ? `[MEDIDAS EXACTAS REQUERIDAS] - Medir: ${whatToMeasure.join(', ')}${customMeasurement ? ` (${customMeasurement})` : ''} | Herramientas: ${specificTools || 'Sin especificar'} | Presup. medidas: $${measurePriceMin}-$${measurePriceMax}\n\nDetalles adicionales: ${details}` : details,
         price_min: parseInt(priceMin) || 0,
         price_max: parseInt(priceMax) || 0,
         location_label: location,
@@ -308,6 +356,7 @@ function HomeScreen({ session, setSession }) {
       
       // Navigate first, keep the data in state so the Waiting screen can render it!
       transitionToStep('waiting_proposals');
+      resetFormState();
       // Subscribe to proposals for this job
       const subscription = supabase
         .channel(`job_proposals_${data[0].id}`)
@@ -476,11 +525,10 @@ function HomeScreen({ session, setSession }) {
             const subExists = foundCat.subs.find(s => s.name === mockSub);
             const finalSub = subExists ? mockSub : (foundCat.subs[0]?.name || "");
 
-            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             setIsAiFiltered(true);
             setSelectedCategory(foundCat);
             setSelectedSubs([finalSub]);
-            setStep('form');
+            transitionToStep('form');
             if (!recentSearches.includes(q.trim())) setRecentSearches(prev => [q.trim(), ...prev].slice(0, 5));
         } else {
             Alert.alert("Ops", "No pudimos clasificar tu pedido. Por favor intenta con otras palabras.");
@@ -519,11 +567,10 @@ function HomeScreen({ session, setSession }) {
         const subExists = foundCat.subs.find(s => s.name === subName);
         const finalSub = subExists ? subName : (foundCat.subs[0]?.name || "");
 
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setIsAiFiltered(true);
         setSelectedCategory(foundCat);
         setSelectedSubs([finalSub]);
-        setStep('form');
+        transitionToStep('form');
         if (!recentSearches.includes(q.trim())) setRecentSearches(prev => [q.trim(), ...prev].slice(0, 5));
       } else {
         Alert.alert("Interesante 🤔", "Intenta describirlo con otras palabras.");
@@ -570,7 +617,7 @@ function HomeScreen({ session, setSession }) {
             </View>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 24 }}>
+          <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 24 }}>
             <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 16, marginBottom: 20 }}>Búsquedas recientes</Text>
             {recentSearches.map((term, index) => (
               <TouchableOpacity 
@@ -604,7 +651,7 @@ function HomeScreen({ session, setSession }) {
                   <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 20 }}>Detalle del Trabajo</Text>
                </View>
 
-               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
+               <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
                   {/* TASKER INFO SUMMARY */}
                   <View style={{ backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, marginBottom: 20, borderWidth: 1, borderColor: '#F2F4F6' }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15 }}>
@@ -678,22 +725,36 @@ function HomeScreen({ session, setSession }) {
             </View>
           ) : (
             /* ORDERS LIST / SUMMARY */
-            <View style={{ flex: 1 }}>
-               <View style={{ padding: 24, paddingTop: Platform.OS === 'android' ? 60 : 40, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#F2F4F6' }}>
-                  <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 24 }}>Mis Pedidos</Text>
-                  <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 14, marginTop: 4 }}>Gestiona tus servicios activos</Text>
+            <View style={{ flex: 1, backgroundColor: '#F4F8FF' }}>
+               <View style={{ padding: 24, paddingTop: Platform.OS === 'android' ? 60 : 40, borderBottomWidth: 0 }}>
+                  <Text style={{ fontFamily: 'Montserrat_900Black', color: '#001A4D', fontSize: 24 }}>Mis Pedidos</Text>
+                  <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 13, marginTop: 4 }}>Gestiona tus servicios activos.</Text>
                </View>
 
-               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
+               <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
                   {proposals.length === 0 ? (
-                    <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 100 }}>
-                       <View style={{ width: 120, height: 120, backgroundColor: 'rgba(26, 107, 255, 0.05)', borderRadius: 60, alignItems: 'center', justifyContent: 'center', marginBottom: 25 }}>
-                         <MaterialCommunityIcons name="clipboard-text-search-outline" size={60} color="#1A6BFF" opacity={0.5} />
+                    <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 40 }}>
+                       <View style={{ width: 140, height: 140, backgroundColor: '#FFFFFF', borderRadius: 35, alignItems: 'center', justifyContent: 'center', marginBottom: 35, shadowColor: '#1A6BFF', shadowOpacity: 0.1, shadowRadius: 30, elevation: 15 }}>
+                         <MaterialCommunityIcons name="clipboard-text-outline" size={65} color="#1A6BFF" opacity={0.3} />
+                         <View style={{ position: 'absolute', bottom: 30, right: 30, width: 44, height: 44, borderRadius: 14, backgroundColor: '#1A6BFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#1A6BFF', shadowOpacity: 0.4, shadowRadius: 10, elevation: 8 }}>
+                            <Feather name="search" size={20} color="#FFFFFF" />
+                         </View>
                        </View>
-                       <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 18, textAlign: 'center', marginBottom: 10 }}>No tienes pedidos activos</Text>
-                       <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 13, textAlign: 'center', paddingHorizontal: 30 }}>
+                       <Text style={{ fontFamily: 'Montserrat_900Black', color: '#001A4D', fontSize: 18, textAlign: 'center', marginBottom: 15 }}>No tienes pedidos activos</Text>
+                       <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 13, textAlign: 'center', paddingHorizontal: 20, lineHeight: 22, marginBottom: 40 }}>
                           Tus servicios contratados aparecerán aquí. ¡Comienza solicitando un profesional!
                        </Text>
+                       
+                       <TouchableOpacity 
+                          onPress={() => { setSelectedCategory(null); setSelectedSubs([]); resetFormState(); transitionToStep('category'); }}
+                          style={{ backgroundColor: '#1A6BFF', paddingVertical: 18, paddingHorizontal: 30, borderRadius: 12, width: '100%', alignItems: 'center', marginBottom: 25 }}
+                       >
+                          <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#FFFFFF', fontSize: 15 }}>Solicitar un Profesional</Text>
+                       </TouchableOpacity>
+
+                       <TouchableOpacity>
+                          <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', fontSize: 13 }}>Ver Historial de Pedidos</Text>
+                       </TouchableOpacity>
                     </View>
                   ) : (
                     <>
@@ -731,7 +792,7 @@ function HomeScreen({ session, setSession }) {
 
           {/* SHARED BOTTOM NAV BAR */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingVertical: 15, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#F2F4F6' }}>
-            <TouchableOpacity onPress={() => { setSelectedCategory(null); setSelectedSubs([]); transitionToStep('category'); }} style={{ alignItems: 'center' }}>
+            <TouchableOpacity onPress={() => { setSelectedCategory(null); setSelectedSubs([]); resetFormState(); transitionToStep('category'); }} style={{ alignItems: 'center' }}>
               <Feather name="home" size={24} color="#424655" />
               <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 10, marginTop: 4 }}>Inicio</Text>
             </TouchableOpacity>
@@ -758,63 +819,83 @@ function HomeScreen({ session, setSession }) {
     const userEmail = user?.email || 'Sin correo';
 
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#F8F9FB' }}>
+      <View style={{ flex: 1, backgroundColor: '#F8F9FB' }}>
         <Animated.View style={{ flex: 1, opacity: mainFadeAnim }}>
-          {/* UBER-STYLE HEADER */}
-          <View style={{ backgroundColor: '#191C1E', padding: 24, paddingTop: Platform.OS === 'android' ? 60 : 40, borderBottomLeftRadius: 30, borderBottomRightRadius: 30, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 15, elevation: 15 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
-               <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#1A6BFF', alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#FFFFFF22' }}>
+          {/* DIGITAL CONCIERGE HEADER */}
+          <View style={{ backgroundColor: '#191C1E', paddingTop: Platform.OS === 'android' ? 60 : 50, paddingBottom: 50, paddingHorizontal: 24, zIndex: 1 }}>
+            {/* Top Bar */}
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 20 }}>
+               <TouchableOpacity onPress={handleSignOut} style={{ padding: 8 }}>
+                 <Feather name="log-out" size={22} color="#FFFFFF" />
+               </TouchableOpacity>
+            </View>
+
+            {/* Profile Info Centered */}
+            <View style={{ alignItems: 'center' }}>
+               <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#1A6BFF', alignItems: 'center', justifyContent: 'center', marginBottom: 15 }}>
                   <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFFFFF', fontSize: 32 }}>{getInitials(fullName)}</Text>
                </View>
-               <View style={{ marginLeft: 20, flex: 1 }}>
-                  <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFFFFF', fontSize: 22 }}>{fullName}</Text>
-                  <View style={{ backgroundColor: '#FFFFFF11', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, alignSelf: 'flex-start', marginTop: 5, flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#FFFFFFCC', fontSize: 13 }}>{userEmail}</Text>
-                  </View>
+               <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFFFFF', fontSize: 20, marginBottom: 5 }}>{fullName}</Text>
+               <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 12, marginBottom: 15 }}>{userEmail}</Text>
+               
+               <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF15', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20 }}>
+                  <Feather name="star" size={12} color="#F59E0B" fill="#F59E0B" />
+                  <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#FFFFFF', fontSize: 12, marginLeft: 8 }}>{userRating} Puntuación</Text>
                </View>
-            </View>
-            
-            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF11', padding: 12, borderRadius: 16 }}>
-               <Feather name="star" size={16} color="#F59E0B" fill="#F59E0B" />
-               <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#FFFFFF', fontSize: 14, marginLeft: 8 }}>{userRating}</Text>
-               <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#FFFFFF99', fontSize: 13, marginLeft: 5 }}>Puntuación</Text>
             </View>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
-            {/* MENU ITEMS */}
-            {[
-              { label: 'Administrar cuenta', icon: 'settings' },
-              { label: 'Mis direcciones', icon: 'map-pin' },
-              { label: 'Métodos de pago', icon: 'credit-card' },
-              { label: 'Invitar amigos', icon: 'gift' },
-              { label: 'Quiénes somos', icon: 'info' },
-              { label: 'Calificar app', icon: 'star' },
-              { label: 'Ayuda', icon: 'help-circle' },
-            ].map((item, idx) => (
-              <TouchableOpacity 
-                key={idx} 
-                style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 18, borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: '#F2F4F6', shadowColor: '#000', shadowOpacity: 0.02, shadowRadius: 5, elevation: 2 }}
-              >
-                <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: '#F8F9FB', alignItems: 'center', justifyContent: 'center' }}>
-                  <Feather name={item.icon} size={20} color="#191C1E" />
-                </View>
-                <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 15, flex: 1, marginLeft: 15 }}>{item.label}</Text>
-                <Feather name="chevron-right" size={18} color="#D1D5DB" />
-              </TouchableOpacity>
-            ))}
+          {/* LIST ITEMS OVERLAPPING HEADER */}
+          <ScrollView 
+            keyboardShouldPersistTaps="handled" 
+            showsVerticalScrollIndicator={false} 
+            style={{ flex: 1, zIndex: 5, marginTop: -25 }} 
+            contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100 }}
+          >
+            <View style={{ backgroundColor: '#FFFFFF', borderRadius: 20, padding: 5, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 5, marginBottom: 15 }}>
+              {/* MENU ITEMS */}
+              {[
+                { label: 'Administrar cuenta', icon: 'settings' },
+                { label: 'Mis direcciones', icon: 'map-pin' },
+                { label: 'Métodos de pago', icon: 'credit-card' },
+              ].map((item, idx) => (
+                <TouchableOpacity 
+                  key={idx} 
+                  style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 18, borderBottomWidth: idx === 2 ? 0 : 1, borderBottomColor: '#F2F4F6' }}
+                >
+                  <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: '#1A6BFF10', alignItems: 'center', justifyContent: 'center' }}>
+                    <Feather name={item.icon} size={16} color="#1A6BFF" />
+                  </View>
+                  <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 14, flex: 1, marginLeft: 15 }}>{item.label}</Text>
+                  <Feather name="chevron-right" size={16} color="#8B8FA8" />
+                </TouchableOpacity>
+              ))}
+            </View>
 
-            <TouchableOpacity 
-              onPress={handleSignOut}
-              style={{ marginTop: 20, backgroundColor: '#FF5C3A11', padding: 20, borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: '#FF5C3A33' }}
-            >
-              <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FF5C3A', fontSize: 16, textTransform: 'uppercase', letterSpacing: 1 }}>Cerrar sesión</Text>
-            </TouchableOpacity>
+            <View style={{ backgroundColor: '#FFFFFF', borderRadius: 20, padding: 5, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 5 }}>
+              {[
+                { label: 'Invitar amigos', icon: 'share-2', color: '#F97316', bg: '#F9731615' },
+                { label: 'Quiénes somos', icon: 'info', color: '#1A6BFF', bg: '#1A6BFF10' },
+                { label: 'Calificar app', icon: 'star', color: '#1A6BFF', bg: '#1A6BFF10' },
+                { label: 'Ayuda', icon: 'help-circle', color: '#1A6BFF', bg: '#1A6BFF10' },
+              ].map((item, idx) => (
+                <TouchableOpacity 
+                  key={idx} 
+                  style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 18, borderBottomWidth: idx === 3 ? 0 : 1, borderBottomColor: '#F2F4F6' }}
+                >
+                  <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: item.bg, alignItems: 'center', justifyContent: 'center' }}>
+                    <Feather name={item.icon} size={16} color={item.color} />
+                  </View>
+                  <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 14, flex: 1, marginLeft: 15 }}>{item.label}</Text>
+                  <Feather name="chevron-right" size={16} color="#8B8FA8" />
+                </TouchableOpacity>
+              ))}
+            </View>
           </ScrollView>
 
           {/* SHARED BOTTOM NAV BAR */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingVertical: 15, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#F2F4F6' }}>
-            <TouchableOpacity onPress={() => { setSelectedCategory(null); setSelectedSubs([]); transitionToStep('category'); }} style={{ alignItems: 'center' }}>
+            <TouchableOpacity onPress={() => { setSelectedCategory(null); setSelectedSubs([]); resetFormState(); transitionToStep('category'); }} style={{ alignItems: 'center' }}>
               <Feather name="home" size={24} color="#424655" />
               <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 10, marginTop: 4 }}>Inicio</Text>
             </TouchableOpacity>
@@ -830,7 +911,7 @@ function HomeScreen({ session, setSession }) {
         </Animated.View>
 
 
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -956,7 +1037,7 @@ function HomeScreen({ session, setSession }) {
                 </View>
             )}
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+            <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
                 <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 14, marginBottom: 15, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                     {proposals.length === 0 ? 'Buscando interesados...' : `Taskers interesados (${proposals.length})`}
                 </Text>
@@ -1045,7 +1126,7 @@ function HomeScreen({ session, setSession }) {
             </View>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120, paddingTop: 10 }}>
+          <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120, paddingTop: 10 }}>
             {/* CHIPS HEADER */}
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 20 }}>
               {selectedSubs?.map((s, i) => (
@@ -1117,28 +1198,199 @@ function HomeScreen({ session, setSession }) {
             {selectedCategory?.id === 'construccion' && (
               <View style={{ backgroundColor: '#FFFFFF', borderRadius: 24, padding: 20, marginBottom: 20, shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 15, elevation: 2, borderWidth: 1, borderColor: '#F2F4F6' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15 }}>
-                  <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#F8F9FB', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                    <Feather name="maximize" size={18} color="#1A6BFF" />
-                  </View>
                   <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 15 }}>¿Necesitas medidas exactas?</Text>
                 </View>
                 <View style={{ flexDirection: 'row' }}>
-                  {['SÍ', 'NO'].map(opt => (
+                  {['NO', 'SÍ'].map(opt => (
                     <TouchableOpacity 
                       key={opt} 
                       onPress={() => setNeedsMeasurements(opt)} 
                       style={{ 
                         flex: 1, paddingVertical: 12, borderRadius: 16, 
-                        backgroundColor: needsMeasurements === opt ? (opt === 'SÍ' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 92, 58, 0.1)') : '#F8F9FB', 
+                        backgroundColor: needsMeasurements === opt ? (opt === 'SÍ' ? '#1A6BFF' : 'rgba(26, 107, 255, 0.1)') : '#FFFFFF', 
                         alignItems: 'center', justifyContent: 'center',
-                        borderWidth: 1, borderColor: needsMeasurements === opt ? (opt === 'SÍ' ? '#22C55E' : '#FF5C3A') : 'transparent',
-                        marginHorizontal: 4
+                        borderWidth: 1, borderColor: needsMeasurements === opt ? '#1A6BFF' : '#F2F4F6',
+                        marginHorizontal: 4,
+                        elevation: needsMeasurements === opt && opt === 'SÍ' ? 4 : 0,
+                        shadowColor: '#1A6BFF', shadowOpacity: 0.3, shadowRadius: 8
                       }}
                     >
-                      <Text style={{ fontFamily: 'Montserrat_700Bold', color: needsMeasurements === opt ? (opt === 'SÍ' ? '#22C55E' : '#FF5C3A') : '#8B8FA8', fontSize: 14 }}>{opt}</Text>
+                      <Text style={{ fontFamily: 'Montserrat_700Bold', color: needsMeasurements === opt ? (opt === 'SÍ' ? '#FFFFFF' : '#1A6BFF') : '#8B8FA8', fontSize: 14, textTransform: 'uppercase' }}>{opt}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
+
+                {needsMeasurements === 'SÍ' && (
+                  <View style={{ marginTop: 20, backgroundColor: '#F4F8FF', padding: 15, borderRadius: 20, borderWidth: 1, borderColor: '#D6E4FF' }}>
+                    {/* WHAT TO MEASURE */}
+                    <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 15, marginBottom: 15, borderWidth: 1, borderColor: '#F2F4F6' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                        <View style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: 'rgba(26, 107, 255, 0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+                          <Feather name="maximize" size={16} color="#1A6BFF" />
+                        </View>
+                        <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 14 }}>¿Qué necesitas medir?</Text>
+                      </View>
+                      
+                      <View style={{ backgroundColor: '#F8F9FB', borderRadius: 12, paddingHorizontal: 15, height: 50, borderWidth: 1, borderColor: '#F2F4F6', marginBottom: 15 }}>
+                        <TextInput 
+                          value={customMeasurement}
+                          onChangeText={setCustomMeasurement}
+                          placeholder="Escribe aquí (ej. ventana, puerta, piso...)" 
+                          placeholderTextColor="#8B8FA8"
+                          style={{ flex: 1, height: '100%', color: '#191C1E', fontFamily: 'Montserrat_400Regular', fontSize: 13 }}
+                        />
+                      </View>
+
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                        {['Pared', 'Cocina', 'Baño', 'Exteriores', 'Muebles / Instalación especifica'].map((item) => {
+                          const isActive = whatToMeasure.includes(item);
+                          return (
+                            <TouchableOpacity 
+                              key={item}
+                              onPress={() => toggleMeasurement(item)}
+                              style={{ 
+                                paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, 
+                                backgroundColor: isActive ? 'rgba(26, 107, 255, 0.15)' : '#F8F9FB', 
+                                marginBottom: 8, marginRight: 8, borderWidth: 1, borderColor: isActive ? 'rgba(26, 107, 255, 0.2)' : 'transparent' 
+                              }}
+                            >
+                              <Text style={{ fontFamily: isActive ? 'Montserrat_700Bold' : 'Montserrat_400Regular', color: isActive ? '#1A6BFF' : '#424655', fontSize: 12 }}>{item}</Text>
+                            </TouchableOpacity>
+                          )
+                        })}
+                      </View>
+                    </View>
+
+                    {/* PHOTOS */}
+                    <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 15, marginBottom: 15, borderWidth: 1, borderColor: '#F2F4F6' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                        <View style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: 'rgba(26, 107, 255, 0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+                          <Feather name="camera" size={16} color="#1A6BFF" />
+                        </View>
+                        <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 14 }}>¿Puedes subir fotos del área?</Text>
+                      </View>
+                      
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+                        <TouchableOpacity onPress={() => handlePickMedia(true)} style={{ flex: 1, backgroundColor: '#F8F9FB', borderRadius: 16, padding: 15, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#D1D5DB', marginRight: 8 }}>
+                          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2, marginBottom: 8 }}>
+                            <Feather name="camera" size={20} color="#1A6BFF" />
+                          </View>
+                          <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 12, marginBottom: 2 }}>Cámara</Text>
+                          <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 10 }}>Tomar foto</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity onPress={() => handlePickMedia(false)} style={{ flex: 1, backgroundColor: '#F8F9FB', borderRadius: 16, padding: 15, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderStyle: 'dashed', borderColor: '#D1D5DB', marginLeft: 8 }}>
+                          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2, marginBottom: 8 }}>
+                            <Feather name="image" size={20} color="#1A6BFF" />
+                          </View>
+                          <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 12, marginBottom: 2 }}>Galería</Text>
+                          <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 10 }}>Subir archivo</Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      {attachments.length > 0 && (
+                        <ScrollView keyboardShouldPersistTaps="handled" horizontal showsHorizontalScrollIndicator={false}>
+                          {attachments.map((file, idx) => (
+                            <View key={idx} style={{ position: 'relative', marginRight: 12 }}>
+                              <Image source={{ uri: file.uri }} style={{ width: 60, height: 60, borderRadius: 12 }} />
+                              <TouchableOpacity onPress={() => removeAttachment(idx)} style={{ position: 'absolute', top: -4, right: -4, backgroundColor: '#191C1E', width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#FFF' }}>
+                                <Feather name="x" size={10} color="#FFF" />
+                              </TouchableOpacity>
+                            </View>
+                          ))}
+                        </ScrollView>
+                      )}
+                    </View>
+
+                    {/* SPECIFIC TOOLS */}
+                    <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 15, marginBottom: 15, borderWidth: 1, borderColor: '#F2F4F6' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                        <View style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: 'rgba(26, 107, 255, 0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+                          <Feather name="tool" size={16} color="#1A6BFF" />
+                        </View>
+                        <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 14 }}>¿Alguna herramienta específica?</Text>
+                      </View>
+                      <View style={{ backgroundColor: '#F8F9FB', borderRadius: 12, paddingHorizontal: 15, height: 50, borderWidth: 1, borderColor: '#F2F4F6' }}>
+                        <TextInput 
+                          value={specificTools}
+                          onChangeText={setSpecificTools}
+                          placeholder="Ej: Escalera de 3 metros, láser..." 
+                          placeholderTextColor="#8B8FA8"
+                          style={{ flex: 1, height: '100%', color: '#191C1E', fontFamily: 'Montserrat_400Regular', fontSize: 13 }}
+                        />
+                      </View>
+                    </View>
+
+                    {/* BUDGET SUGGESTION */}
+                    <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 15, borderWidth: 1, borderColor: '#F2F4F6' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                        <View style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: 'rgba(26, 107, 255, 0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+                          <MaterialCommunityIcons name="cash-multiple" size={16} color="#1A6BFF" />
+                        </View>
+                        <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 14 }}>Presupuesto sugerido</Text>
+                      </View>
+                      <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 11, marginBottom: 15, marginLeft: 42 }}>Valor por la toma de medidas</Text>
+                      
+                      {/* Custom Slider */}
+                      <View 
+                        style={{ height: 40, justifyContent: 'center', marginBottom: 15, paddingHorizontal: 10 }}
+                        onLayout={e => setMeasureSliderWidth(e.nativeEvent.layout.width)}
+                        onStartShouldSetResponder={() => true}
+                        onResponderGrant={handleMeasureSliderTouch}
+                        onResponderMove={handleMeasureSliderTouch}
+                      >
+                        <View style={{ height: 6, backgroundColor: '#F2F4F6', borderRadius: 3, width: '100%' }} />
+                        {measureSliderWidth > 0 && (() => {
+                          const minL = 5, maxL = 50;
+                          const cMin = Math.max(minL, Math.min(parseInt(measurePriceMin) || minL, maxL));
+                          const cMax = Math.max(minL, Math.min(parseInt(measurePriceMax) || maxL, maxL));
+                          const leftPos = ((cMin - minL) / (maxL - minL)) * (measureSliderWidth - 20);
+                          const rightPos = ((cMax - minL) / (maxL - minL)) * (measureSliderWidth - 20);
+                          return (
+                            <View style={{ position: 'absolute', left: 10, right: 10, height: 40, justifyContent: 'center' }}>
+                              <View pointerEvents="none" style={{ position: 'absolute', height: 6, backgroundColor: '#1A6BFF', left: leftPos, width: rightPos - leftPos, borderRadius: 3 }} />
+                              <View pointerEvents="none" style={{ position: 'absolute', left: leftPos - 12, width: 24, height: 24, borderRadius: 12, backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 5, elevation: 5, borderWidth: 2, borderColor: '#1A6BFF' }} />
+                              <View pointerEvents="none" style={{ position: 'absolute', left: rightPos - 12, width: 24, height: 24, borderRadius: 12, backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 5, elevation: 5, borderWidth: 2, borderColor: '#1A6BFF' }} />
+                            </View>
+                          );
+                        })()}
+                      </View>
+
+                      {/* Inputs min max */}
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+                        <View style={{ flex: 1, backgroundColor: '#F8F9FB', borderRadius: 12, padding: 12, alignItems: 'center' }}>
+                          <Text style={{ color: '#8B8FA8', fontSize: 9, fontFamily: 'Montserrat_700Bold', textTransform: 'uppercase' }}>MÍNIMO</Text>
+                          <Text style={{ fontSize: 16, fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', marginTop: 2 }}>${measurePriceMin}</Text>
+                        </View>
+                        <Text style={{ color: '#F2F4F6', fontSize: 24, marginHorizontal: 10 }}>-</Text>
+                        <View style={{ flex: 1, backgroundColor: '#F8F9FB', borderRadius: 12, padding: 12, alignItems: 'center' }}>
+                          <Text style={{ color: '#8B8FA8', fontSize: 9, fontFamily: 'Montserrat_700Bold', textTransform: 'uppercase' }}>MÁXIMO</Text>
+                          <Text style={{ fontSize: 16, fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', marginTop: 2 }}>${measurePriceMax}</Text>
+                        </View>
+                      </View>
+
+                      {/* Fixed Chips */}
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+                        {['5', '10', '15', '20', '25'].map(val => {
+                          const numVal = parseInt(val);
+                          const isActive = measurePriceMin === String(numVal) + '.00' || measurePriceMax === String(numVal) + '.00';
+                          return (
+                            <TouchableOpacity 
+                              key={val}
+                              onPress={() => {
+                                if (numVal <= 10) setMeasurePriceMin(`${val}.00`);
+                                else setMeasurePriceMax(`${val}.00`);
+                              }}
+                              style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: isActive ? '#1A6BFF' : '#F2F4F6' }}
+                            >
+                              <Text style={{ fontFamily: 'Montserrat_700Bold', color: isActive ? '#1A6BFF' : '#424655', fontSize: 11 }}>${val}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  </View>
+                )}
               </View>
             )}
 
@@ -1229,7 +1481,7 @@ function HomeScreen({ session, setSession }) {
                   <Feather name="camera" size={24} color="#1A6BFF" />
                 </TouchableOpacity>
 
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <ScrollView keyboardShouldPersistTaps="handled" horizontal showsHorizontalScrollIndicator={false}>
                   <TouchableOpacity onPress={() => handlePickMedia(false)} style={{ width: 60, height: 60, borderRadius: 16, backgroundColor: '#F8F9FB', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderStyle: 'dashed', borderColor: '#1A6BFF' }}>
                     <Feather name="plus" size={24} color="#1A6BFF" />
                   </TouchableOpacity>
@@ -1344,6 +1596,7 @@ function HomeScreen({ session, setSession }) {
               onPress={() => {
                 setSelectedCategory(null);
                 setSelectedSubs([]);
+                resetFormState();
                 transitionToStep('category');
               }} 
               style={{ width: 45, height: 45, borderRadius: 23, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#F2F4F6' }}
@@ -1364,7 +1617,7 @@ function HomeScreen({ session, setSession }) {
 
           {/* HORIZONTAL CATEGORY TABS (TASKRABBIT STYLE) */}
           <View style={{ marginBottom: 25, borderBottomWidth: 1, borderBottomColor: '#F2F4F6', paddingBottom: 15 }}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingLeft: 0 }}>
+            <ScrollView keyboardShouldPersistTaps="handled" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingLeft: 0 }}>
               {CATEGORIES.map((cat) => {
                 const isActive = selectedCategory.id === cat.id;
                 return (
@@ -1398,7 +1651,7 @@ function HomeScreen({ session, setSession }) {
             </ScrollView>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+          <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
             {/* SUB-CATEGORIES CHIPS CLOUD */}
             <View style={{ paddingBottom: 20 }}>
                <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 18, marginBottom: 8 }}>{selectedCategory.label}</Text>
@@ -1469,7 +1722,7 @@ function HomeScreen({ session, setSession }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F8F9FB' }}>
       <Animated.View style={{ flex: 1, opacity: mainFadeAnim }}>
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         {/* HEADER */}
         <View style={{ paddingHorizontal: 24, paddingTop: Platform.OS === 'android' ? 40 : 25, zIndex: 10 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -1513,6 +1766,7 @@ function HomeScreen({ session, setSession }) {
                 onPress={() => {
                   setSelectedCategory(cat);
                   setSelectedSubs([]);
+                  resetFormState();
                   transitionToStep('category'); // We stay in categories but show sub-grid
                 }} 
                 style={{ width: '31%', backgroundColor: '#F2F4F6', borderRadius: 16, paddingVertical: 18, alignItems: 'center', marginBottom: 14, borderWidth: 1, borderColor: '#F2F4F6', marginRight: (index + 1) % 3 === 0 ? 0 : '3.5%' }}
@@ -1593,7 +1847,7 @@ function HomeScreen({ session, setSession }) {
 
       {/* BOTTOM NAV BAR */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingVertical: 15, backgroundColor: '#F8F9FB', borderTopWidth: 1, borderTopColor: '#F2F4F6' }}>
-        <TouchableOpacity onPress={() => { setSelectedCategory(null); setSelectedSubs([]); transitionToStep('category'); }} style={{ alignItems: 'center' }}>
+        <TouchableOpacity onPress={() => { setSelectedCategory(null); setSelectedSubs([]); resetFormState(); transitionToStep('category'); }} style={{ alignItems: 'center' }}>
           <Feather name="home" size={24} color="#1A6BFF" />
           <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', fontSize: 10, marginTop: 4 }}>Inicio</Text>
         </TouchableOpacity>
@@ -1618,7 +1872,7 @@ function HomeScreen({ session, setSession }) {
             
             <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 20, marginBottom: 20 }}>Tus direcciones</Text>
             
-            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 350 }}>
+            <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} style={{ maxHeight: 350 }}>
               {savedLocations.map(loc => {
                 const isSelected = location === loc.name || location === loc.address || (loc.isCurrent && location === 'Buscando...');
                 return (
@@ -1789,11 +2043,23 @@ function AuthScreen({ setSession }) {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     }
     
-    // Clear inputs when switching screens for security/UX
-    setEmail('');
-    setPassword('');
-    setName('');
-    setConfirmPassword('');
+    // Solo limpiamos los inputs si estamos cerrando el registro o cambiando entre login/welcome
+    // NO limpiamos los datos si solo estamos pasando al paso 2 o paso 3 del registro!
+    if (newMode === 'welcome' || newMode === 'login') {
+      setEmail('');
+      setPassword('');
+      setName('');
+      setConfirmPassword('');
+      setOtpCode('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+      setFrontId(null);
+      setBackId(null);
+      setSelfie(null);
+      setBirthDate(new Date());
+      setDateIsSet(false);
+      setAuthLocation('Ubicación personalizada');
+    }
 
     Animated.timing(fadeAnim, {
       toValue: 0,
@@ -1941,7 +2207,13 @@ function AuthScreen({ setSession }) {
         "Este correo electrónico ya está registrado en SERVITASK. Por favor, intenta conectar desde Iniciar Sesión o usa un correo totalmente nuevo."
       );
     } else {
-      setMode('verify_otp');
+      // Si la base de datos no exige confirmación, inicia sesión automáticamente
+      if (data.session) {
+         if (setSession) setSession(data.session);
+      } else {
+         // Si la base de datos SÍ exige confirmación, vamos a la pantalla de código
+         setMode('verify_otp');
+      }
     }
   };
 
@@ -2043,7 +2315,7 @@ function AuthScreen({ setSession }) {
     <StatusBar translucent backgroundColor="transparent" style={mode === 'welcome' ? 'light' : 'dark'} />
     <SafeAreaView style={{ flex: 1, backgroundColor: mode === 'welcome' ? '#4facfe' : '#F8F9FB' }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView 
+        <ScrollView keyboardShouldPersistTaps="handled" 
           contentContainerStyle={styles.scrollContent} 
           showsVerticalScrollIndicator={false}
           scrollEnabled={mode !== 'welcome'}
