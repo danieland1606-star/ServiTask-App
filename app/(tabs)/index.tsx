@@ -31,6 +31,9 @@ function HomeScreen({ session, setSession }) {
   const [proposals, setProposals] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [userRating, setUserRating] = useState('5.0'); // Base rating if no reviews
+  const [availableJobs, setAvailableJobs] = useState([]);
+  const [isTaskerMode, setIsTaskerMode] = useState(true); 
+  const [isOnline, setIsOnline] = useState(true);
 
   const getInitials = (fullName) => {
     if (!fullName) return 'U';
@@ -130,6 +133,16 @@ function HomeScreen({ session, setSession }) {
   const [needsMeasurements, setNeedsMeasurements] = useState('');
   const [attachments, setAttachments] = useState([]);
   
+  // Premium Location Form Detail States
+  const [showLocationDetailForm, setShowLocationDetailForm] = useState(false);
+  const [locMz, setLocMz] = useState('');
+  const [locVilla, setLocVilla] = useState('');
+  const [locSolar, setLocSolar] = useState('');
+  const [locDepto, setLocDepto] = useState('');
+  const [locRef, setLocRef] = useState('');
+  const [locAlias, setLocAlias] = useState('');
+  const [locTempBase, setLocTempBase] = useState(''); // Geocoded address from map
+  
   // Custom measurements state
   const [whatToMeasure, setWhatToMeasure] = useState([]);
   const [customMeasurement, setCustomMeasurement] = useState('');
@@ -141,7 +154,7 @@ function HomeScreen({ session, setSession }) {
   const [sliderWidth, setSliderWidth] = useState(0);
 
   const resetFormState = () => {
-    setLocation('Ubicación actual en mapa');
+    // Keep current location label to avoid reverting to 'Ubicación actual'
     setAddressDetails('');
     setDuration('1 hora o fracción');
     setPriceMin('20');
@@ -237,12 +250,12 @@ function HomeScreen({ session, setSession }) {
             latitudeDelta: 0.005,
             longitudeDelta: 0.005,
           });
-          // Update savedLocations current entry
+          // Update savedLocations current entry (Name and address)
           setSavedLocations(prev => prev.map(sl =>
-            sl.isCurrent ? { ...sl, address: label } : sl
+            sl.isCurrent ? { ...sl, name: city || 'Mi ubicación', address: label } : sl
           ));
         } else {
-          setLocation('Mi ubicación actual');
+          setLocation('Mi ubicación');
         }
       } catch {
         setLocation('Guayaquil, Ecuador');
@@ -369,17 +382,67 @@ function HomeScreen({ session, setSession }) {
     }
   };
 
+
   const fetchAvailableJobs = async () => {
-    const { data, error } = await supabase
-      .from('jobs')
-      .select('*')
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false });
-    if (!error) setAvailableJobs(data);
+    try {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      if (data) setAvailableJobs(data);
+    } catch (err) {
+      console.log('Error fetching available jobs:', err);
+    }
   };
 
+  // Real-time subscription for new jobs
+  useEffect(() => {
+    if (!isTaskerMode || !isOnline) return;
+
+    fetchAvailableJobs();
+
+    const subscription = supabase
+      .channel('public:jobs')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'jobs', filter: 'status=eq.pending' }, 
+        payload => {
+          setAvailableJobs(prev => [payload.new, ...prev]);
+        }
+      )
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'jobs' }, 
+        payload => {
+          if (payload.new.status !== 'pending') {
+            setAvailableJobs(prev => prev.filter(j => j.id !== payload.new.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, [isTaskerMode, isOnline]);
+
   const handleInterest = async (jobId) => {
-    // This is for Tasker app, but we'll remove it soon or keep as mock
+    try {
+      const { error } = await supabase
+        .from('proposals')
+        .insert([{
+          job_id: jobId,
+          tasker_id: session.user.id,
+          tasker_name: userName,
+          price: parseInt(priceMin) || 0,
+          status: 'pending'
+        }]);
+      
+      if (error) throw error;
+      Alert.alert("¡Enviado!", "Tu interés ha sido notificado al cliente.");
+      setSelectedOrder(null);
+    } catch (err) {
+      Alert.alert("Error", "No se pudo enviar: " + err.message);
+    }
   };
 
   const CATEGORIES = [
@@ -1560,18 +1623,22 @@ function HomeScreen({ session, setSession }) {
                           const street = place.street || place.name || '';
                           const city = place.city || place.subregion || '';
                           const newLoc = `${street ? street + ', ' : ''}${city}`.trim().replace(/^, |, $/g, '');
-                          setLocation(newLoc || 'Ubicación en mapa');
+                          const fullLabel = newLoc || 'Ubicación en mapa';
+                          
+                          setLocTempBase(fullLabel);
+                          setShowLocationDetailForm(true); // Transition to Phase 2
                         } else {
-                          setLocation('Ubicación personalizada al pin');
+                          setLocation('Ubicación personalizada');
+                          setShowMapModal(false);
                         }
                       } catch (e) {
                          setLocation('Ubicación en mapa');
+                         setShowMapModal(false);
                       }
-                      setShowMapModal(false);
                     }}
                     style={{ backgroundColor: '#1A6BFF', padding: 18, borderRadius: 16, alignItems: 'center', shadowColor: '#1A6BFF', shadowOpacity: 0.4, shadowRadius: 10 }}
                   >
-                    <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 16, textTransform: 'uppercase', letterSpacing: 1 }}>CONFIRMAR UBICACIÓN</Text>
+                    <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFFFFF', fontSize: 16, textTransform: 'uppercase', letterSpacing: 1 }}>CONFIRMAR UBICACIÓN</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1949,7 +2016,7 @@ function HomeScreen({ session, setSession }) {
             
             <View style={{ position: 'absolute', top: '50%', left: '50%', marginLeft: -24, marginTop: -48, pointerEvents: 'none', alignItems: 'center' }}>
               <View style={{ backgroundColor: '#1A6BFF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginBottom: 5, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 5 }}>
-                <Text style={{ color: '#191C1E', fontFamily: 'Montserrat_700Bold', fontSize: 12 }}>Estoy aquí</Text>
+                <Text style={{ color: '#FFFFFF', fontFamily: 'Montserrat_700Bold', fontSize: 12 }}>Estoy aquí</Text>
               </View>
               <View style={{ width: 4, height: 20, backgroundColor: '#1A6BFF', marginBottom: -5 }} />
               <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#F8F9FB', borderWidth: 3, borderColor: '#1A6BFF' }} />
@@ -1966,27 +2033,116 @@ function HomeScreen({ session, setSession }) {
                       const street = place.street || place.name || '';
                       const city = place.city || place.subregion || '';
                       const newLoc = `${street ? street + ', ' : ''}${city}`.trim().replace(/^, |, $/g, '');
-                      setLocation(newLoc || 'Ubicación en mapa');
+                      const fullLabel = newLoc || 'Ubicación en mapa';
                       
-                      setSavedLocations(prev => {
-                        if(prev.find(p => p.name === newLoc)) return prev;
-                        const newEntry = { id: Date.now().toString(), name: newLoc, address: 'Ubicación seleccionada en mapa', icon: 'map-pin' };
-                        return [...prev, newEntry];
-                      });
+                      setLocTempBase(fullLabel);
+                      setShowLocationDetailForm(true); // Transition to Phase 2
                     } else {
                       setLocation('Ubicación personalizada');
+                      setShowMapModal(false);
                     }
                   } catch (e) {
                      setLocation('Ubicación en mapa');
+                     setShowMapModal(false);
                   }
-                  setShowMapModal(false);
                 }}
                 style={{ backgroundColor: '#1A6BFF', padding: 18, borderRadius: 16, alignItems: 'center', shadowColor: '#1A6BFF', shadowOpacity: 0.4, shadowRadius: 10 }}
               >
-                <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 16, textTransform: 'uppercase', letterSpacing: 1 }}>CONFIRMAR UBICACIÓN</Text>
+                <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFFFFF', fontSize: 16, textTransform: 'uppercase', letterSpacing: 1 }}>CONFIRMAR UBICACIÓN</Text>
               </TouchableOpacity>
             </View>
           </View>
+        </View>
+      )}
+
+      {/* PHASE 2: DETAILED LOCATION FORM (PEDIDOSYA STYLE) */}
+      {showLocationDetailForm && (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 400, justifyContent: 'flex-end' }}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, justifyContent: 'flex-end' }}>
+            <View style={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 35, borderTopRightRadius: 35, padding: 25, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 20, elevation: 20 }}>
+              <View style={{ width: 45, height: 5, backgroundColor: 'rgba(0,0,0,0.08)', borderRadius: 3, alignSelf: 'center', marginBottom: 20 }} />
+              
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+                <TouchableOpacity onPress={() => setShowLocationDetailForm(false)} style={{ marginRight: 15 }}>
+                  <Feather name="arrow-left" size={24} color="#1E293B" />
+                </TouchableOpacity>
+                <Text style={{ fontFamily: 'Montserrat_900Black', color: '#1E293B', fontSize: 18 }}>Casi listo... Danos el detalle</Text>
+              </View>
+
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+                <View style={{ backgroundColor: '#F8FAFC', padding: 15, borderRadius: 16, marginBottom: 20, borderWidth: 1, borderColor: '#F1F5F9' }}>
+                   <Text style={{ fontSize: 10, fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', textTransform: 'uppercase', marginBottom: 4 }}>Punto en el mapa</Text>
+                   <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#1E293B', fontSize: 13 }}>{locTempBase}</Text>
+                </View>
+
+                {/* FIELDS GRID */}
+                <View style={{ flexDirection: 'row', gap: 12, marginBottom: 15 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 11, fontFamily: 'Montserrat_700Bold', color: '#475569', marginBottom: 6 }}>Manzana *</Text>
+                    <TextInput value={locMz} onChangeText={setLocMz} placeholder="Mz. 40" style={{ backgroundColor: '#F8FAFC', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', fontFamily: 'Montserrat_400Regular', fontSize: 14 }} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 11, fontFamily: 'Montserrat_700Bold', color: '#475569', marginBottom: 6 }}>Villa / Casa *</Text>
+                    <TextInput value={locVilla} onChangeText={setLocVilla} placeholder="Villa 12" style={{ backgroundColor: '#F8FAFC', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', fontFamily: 'Montserrat_400Regular', fontSize: 14 }} />
+                  </View>
+                </View>
+
+                <View style={{ flexDirection: 'row', gap: 12, marginBottom: 15 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 11, fontFamily: 'Montserrat_700Bold', color: '#475569', marginBottom: 6 }}>Solar *</Text>
+                    <TextInput value={locSolar} onChangeText={setLocSolar} placeholder="Solar 5" style={{ backgroundColor: '#F8FAFC', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', fontFamily: 'Montserrat_400Regular', fontSize: 14 }} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 11, fontFamily: 'Montserrat_400Regular', color: '#64748B', marginBottom: 6 }}>Piso / Depto (Opcional)</Text>
+                    <TextInput value={locDepto} onChangeText={setLocDepto} placeholder="Apt 2B" style={{ backgroundColor: '#F8FAFC', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', fontFamily: 'Montserrat_400Regular', fontSize: 14 }} />
+                  </View>
+                </View>
+
+                <View style={{ marginBottom: 15 }}>
+                  <Text style={{ fontSize: 11, fontFamily: 'Montserrat_700Bold', color: '#475569', marginBottom: 6 }}>Referencias adicionales de llegada *</Text>
+                  <TextInput value={locRef} onChangeText={setLocRef} placeholder="A lado de la farmacia azul..." style={{ backgroundColor: '#F8FAFC', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', fontFamily: 'Montserrat_400Regular', fontSize: 14 }} />
+                </View>
+
+                <View style={{ marginBottom: 25 }}>
+                  <Text style={{ fontSize: 11, fontFamily: 'Montserrat_700Bold', color: '#475569', marginBottom: 6 }}>Nombre de la dirección (Alias) *</Text>
+                  <TextInput value={locAlias} onChangeText={setLocAlias} placeholder="Casa Playa, Casa Mamá..." style={{ backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, borderWidth: 2, borderColor: '#1A6BFF22', fontFamily: 'Montserrat_700Bold', fontSize: 14, color: '#1A6BFF' }} />
+                </View>
+
+                <TouchableOpacity 
+                   onPress={() => {
+                     if (!locMz || !locVilla || !locSolar || !locRef || !locAlias) {
+                        Alert.alert("Campos incompletos", "Por favor llena todos los campos marcados como obligatorios (*)");
+                        return;
+                     }
+                     
+                     const structuredAddress = `${locTempBase} - Mz. ${locMz}, Villa ${locVilla}${locDepto ? ', Apt ' + locDepto : ''}`;
+                     const finalLabel = locAlias;
+                     
+                     setSavedLocations(prev => [
+                       ...prev,
+                       { 
+                         id: Date.now().toString(), 
+                         name: finalLabel, 
+                         address: structuredAddress, 
+                         icon: 'map-pin',
+                         details: { mz: locMz, villa: locVilla, depto: locDepto, ref: locRef }
+                       }
+                     ]);
+                     
+                     setLocation(finalLabel);
+                     setShowLocationDetailForm(false);
+                     setShowMapModal(false);
+                     
+                     // Reset helper states
+                     setLocMz(''); setLocVilla(''); setLocSolar(''); setLocDepto(''); setLocRef(''); setLocAlias('');
+                   }}
+                   style={{ backgroundColor: '#1A6BFF', padding: 18, borderRadius: 16, alignItems: 'center', shadowColor: '#1A6BFF', shadowOpacity: 0.4, shadowRadius: 10, elevation: 8 }}
+                >
+                  <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFFFFF', fontSize: 16, textTransform: 'uppercase', letterSpacing: 1 }}>GUARDAR DIRECCIÓN</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            </View>
+          </KeyboardAvoidingView>
         </View>
       )}
       </Animated.View>
