@@ -11,7 +11,18 @@ import MapView, { Marker } from 'react-native-maps';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFonts, Montserrat_400Regular, Montserrat_700Bold, Montserrat_900Black } from '@expo-google-fonts/montserrat';
+import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { supabase } from '../../lib/supabase';
+
+// Configure Calendar to Spanish
+LocaleConfig.locales['es'] = {
+  monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+  monthNamesShort: ['Ene.', 'Feb.', 'Mar', 'Abr', 'May', 'Jun', 'Jul.', 'Ago', 'Sep.', 'Oct.', 'Nov.', 'Dic.'],
+  dayNames: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+  dayNamesShort: ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'],
+  today: 'Hoy'
+};
+LocaleConfig.defaultLocale = 'es';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -26,7 +37,7 @@ function HomeScreen({ session, setSession }) {
   const [userName, setUserName] = useState('ServiTask');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubs, setSelectedSubs] = useState([]);
-  const [step, setStep] = useState('category'); // 'category' | 'form' | 'waiting_proposals' | 'orders' | 'profile'
+  const [step, setStep] = useState('category'); // 'category' | 'form' | 'waiting_proposals' | 'orders' | 'profile' | 'agenda'
   const [activeJobId, setActiveJobId] = useState(null);
   const [proposals, setProposals] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -142,6 +153,19 @@ function HomeScreen({ session, setSession }) {
   const [locRef, setLocRef] = useState('');
   const [locAlias, setLocAlias] = useState('');
   const [locTempBase, setLocTempBase] = useState(''); // Geocoded address from map
+  const [scheduledDate, setScheduledDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [agendaJobs, setAgendaJobs] = useState([]);
+  const [markedDates, setMarkedDates] = useState({});
+
+  const formatLocalDate = (date) => {
+    const years = date.getFullYear();
+    const months = String(date.getMonth() + 1).padStart(2, '0');
+    const days = String(date.getDate()).padStart(2, '0');
+    return `${years}-${months}-${days}`;
+  };
+
+  const [selectedAgendaDate, setSelectedAgendaDate] = useState(formatLocalDate(new Date()));
   
   // Custom measurements state
   const [whatToMeasure, setWhatToMeasure] = useState([]);
@@ -167,6 +191,7 @@ function HomeScreen({ session, setSession }) {
     setSpecificTools('');
     setMeasurePriceMin('5.00');
     setMeasurePriceMax('25.00');
+    setScheduledDate(new Date());
   };
 
   const PROVINCES = ["Azuay", "Bolívar", "Cañar", "Carchi", "Chimborazo", "Cotopaxi", "El Oro", "Esmeraldas", "Galápagos", "Guayas", "Imbabura", "Loja", "Los Ríos", "Manabí", "Morona Santiago", "Napo", "Orellana", "Pastaza", "Pichincha", "Santa Elena", "Santo Domingo", "Sucumbíos", "Tungurahua", "Zamora Chinchipe"];
@@ -357,7 +382,8 @@ function HomeScreen({ session, setSession }) {
         price_min: parseInt(priceMin) || 0,
         price_max: parseInt(priceMax) || 0,
         location_label: location,
-        status: 'pending'
+        status: 'pending',
+        scheduled_date: formatLocalDate(scheduledDate)
       }])
       .select();
 
@@ -424,6 +450,39 @@ function HomeScreen({ session, setSession }) {
       supabase.removeChannel(subscription);
     };
   }, [isTaskerMode, isOnline]);
+
+  const fetchAgendaJobs = async () => {
+    if (!session?.user?.id) return;
+    try {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('client_id', session.user.id)
+        .not('scheduled_date', 'is', null)
+        .order('scheduled_date', { ascending: true });
+      
+      if (error) throw error;
+      if (data) {
+        setAgendaJobs(data);
+        // Create markedDates object for the calendar dots
+        const marked = {};
+        data.forEach(job => {
+          if (job.scheduled_date) {
+            marked[job.scheduled_date] = { marked: true, dotColor: '#1A6BFF' };
+          }
+        });
+        setMarkedDates(marked);
+      }
+    } catch (err) {
+      console.log('Error fetching agenda jobs:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (step === 'agenda' || step === 'orders') {
+      fetchAgendaJobs();
+    }
+  }, [step, session]);
 
   const handleInterest = async (jobId) => {
     try {
@@ -789,9 +848,18 @@ function HomeScreen({ session, setSession }) {
           ) : (
             /* ORDERS LIST / SUMMARY */
             <View style={{ flex: 1, backgroundColor: '#F4F8FF' }}>
-               <View style={{ padding: 24, paddingTop: Platform.OS === 'android' ? 60 : 40, borderBottomWidth: 0 }}>
-                  <Text style={{ fontFamily: 'Montserrat_900Black', color: '#001A4D', fontSize: 24 }}>Mis Pedidos</Text>
-                  <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 13, marginTop: 4 }}>Gestiona tus servicios activos.</Text>
+               <View style={{ padding: 24, paddingTop: Platform.OS === 'android' ? 60 : 40, borderBottomWidth: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <View>
+                    <Text style={{ fontFamily: 'Montserrat_900Black', color: '#001A4D', fontSize: 24 }}>Mis Pedidos</Text>
+                    <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 13, marginTop: 4 }}>Gestiona tus servicios activos.</Text>
+                  </View>
+                  <TouchableOpacity 
+                    onPress={() => transitionToStep('agenda')}
+                    style={{ backgroundColor: '#1A6BFF', paddingHorizontal: 15, paddingVertical: 10, borderRadius: 12, flexDirection: 'row', alignItems: 'center', shadowColor: '#1A6BFF', shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 }}
+                  >
+                    <Feather name="calendar" size={16} color="#FFFFFF" style={{ marginRight: 8 }} />
+                    <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#FFFFFF', fontSize: 12 }}>AGENDA</Text>
+                  </TouchableOpacity>
                </View>
 
                <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
@@ -975,6 +1043,132 @@ function HomeScreen({ session, setSession }) {
 
 
       </View>
+    );
+  }
+
+  if (step === 'agenda') {
+    const jobsForSelectedDate = agendaJobs.filter(j => j.scheduled_date === selectedAgendaDate);
+
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#F8F9FB' }}>
+        <Animated.View style={{ flex: 1, opacity: mainFadeAnim }}>
+          {/* HEADER */}
+          <View style={{ padding: 24, paddingTop: Platform.OS === 'android' ? 60 : 40, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#F2F4F6', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <TouchableOpacity onPress={() => transitionToStep('orders')} style={{ marginRight: 15 }}>
+                <Feather name="arrow-left" size={24} color="#191C1E" />
+              </TouchableOpacity>
+              <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 20 }}>Agenda</Text>
+            </View>
+            <TouchableOpacity style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#F4F8FF', alignItems: 'center', justifyContent: 'center' }}>
+              <Feather name="more-vertical" size={20} color="#1A6BFF" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+            {/* CALENDAR CARD */}
+            <View style={{ padding: 20 }}>
+              <View style={{ backgroundColor: '#FFFFFF', borderRadius: 24, padding: 10, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 15, elevation: 5, borderWidth: 1, borderColor: '#F2F4F6' }}>
+                <Calendar
+                  theme={{
+                    backgroundColor: '#ffffff',
+                    calendarBackground: '#ffffff',
+                    textSectionTitleColor: '#8B8FA8',
+                    selectedDayBackgroundColor: '#1A6BFF',
+                    selectedDayTextColor: '#ffffff',
+                    todayTextColor: '#1A6BFF',
+                    dayTextColor: '#191C1E',
+                    textDisabledColor: '#D1D5DB',
+                    dotColor: '#1A6BFF',
+                    selectedDotColor: '#ffffff',
+                    arrowColor: '#1A6BFF',
+                    monthTextColor: '#191C1E',
+                    indicatorColor: '#1A6BFF',
+                    textDayFontFamily: 'Montserrat_400Regular',
+                    textMonthFontFamily: 'Montserrat_700Bold',
+                    textDayHeaderFontFamily: 'Montserrat_400Regular',
+                    textDayFontSize: 14,
+                    textMonthFontSize: 16,
+                    textDayHeaderFontSize: 12,
+                  }}
+                  onDayPress={(day) => {
+                    setSelectedAgendaDate(day.dateString);
+                  }}
+                  markedDates={{
+                    ...markedDates,
+                    [selectedAgendaDate]: { 
+                      selected: true, 
+                      disableTouchEvent: true, 
+                      selectedColor: '#1A6BFF',
+                      selectedTextColor: 'white'
+                    }
+                  }}
+                />
+              </View>
+            </View>
+
+            {/* DAILY TASKS */}
+            <View style={{ paddingHorizontal: 24 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 16 }}>
+                  {selectedAgendaDate === formatLocalDate(new Date()) ? 'Tareas para hoy' : `Tareas el ${new Date(selectedAgendaDate + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}`}
+                </Text>
+                <View style={{ backgroundColor: '#1A6BFF11', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 }}>
+                  <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', fontSize: 11 }}>{jobsForSelectedDate.length} Tareas</Text>
+                </View>
+              </View>
+
+              {jobsForSelectedDate.length === 0 ? (
+                <View style={{ alignItems: 'center', justifyContent: 'center', py: 40, backgroundColor: '#FFFFFF', borderRadius: 24, padding: 30, borderWidth: 1, borderColor: '#F2F4F6' }}>
+                  <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#F8F9FB', alignItems: 'center', justifyContent: 'center', marginBottom: 15 }}>
+                    <Feather name="calendar" size={24} color="#8B8FA8" />
+                  </View>
+                  <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 15, marginBottom: 5 }}>Día disponible</Text>
+                  <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 12, textAlign: 'center' }}>No tienes tareas programadas para este día.</Text>
+                </View>
+              ) : (
+                jobsForSelectedDate.map((job) => (
+                  <TouchableOpacity 
+                    key={job.id}
+                    style={{ backgroundColor: '#FFFFFF', borderRadius: 20, padding: 18, marginBottom: 15, borderWidth: 1, borderColor: '#F2F4F6', flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.02, shadowRadius: 10, elevation: 2 }}
+                    onPress={() => setSelectedOrder(job)}
+                  >
+                    <View style={{ width: 50, height: 50, borderRadius: 15, backgroundColor: job.category_color + '15' || '#1A6BFF15', alignItems: 'center', justifyContent: 'center' }}>
+                      <MaterialCommunityIcons name={job.category_icon || "clipboard-text-outline"} size={26} color={job.category_color || "#1A6BFF"} />
+                    </View>
+                    <View style={{ flex: 1, marginLeft: 15 }}>
+                      <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 14 }}>{job.title || job.service}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                        <Feather name="clock" size={12} color="#8B8FA8" />
+                        <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 11, marginLeft: 5 }}>{job.time || '10:00 AM'}</Text>
+                        <Text style={{ marginHorizontal: 5, color: '#D1D5DB' }}>•</Text>
+                        <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', fontSize: 11 }}>{job.tasker || 'Pendiente'}</Text>
+                      </View>
+                    </View>
+                    <Feather name="chevron-right" size={20} color="#D1D5DB" />
+                  </TouchableOpacity>
+                ))
+              )}
+            </View>
+          </ScrollView>
+
+          {/* BOTTOM NAV (Reused) */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingVertical: 15, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#F2F4F6' }}>
+            <TouchableOpacity onPress={() => transitionToStep('category')} style={{ alignItems: 'center' }}>
+              <Feather name="home" size={24} color="#424655" />
+              <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 10, marginTop: 4 }}>Inicio</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => transitionToStep('orders')} style={{ alignItems: 'center' }}>
+              <Feather name="clipboard" size={24} color="#1A6BFF" />
+              <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', fontSize: 10, marginTop: 4 }}>Pedidos</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => transitionToStep('profile')} style={{ alignItems: 'center' }}>
+              <Feather name="user" size={24} color="#424655" />
+              <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 10, marginTop: 4 }}>Perfil</Text>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+      </SafeAreaView>
     );
   }
 
@@ -1228,6 +1422,40 @@ function HomeScreen({ session, setSession }) {
                   style={{ flex: 1, color: '#191C1E', fontFamily: 'Montserrat_400Regular', fontSize: 14 }} 
                 />
               </View>
+            </View>
+
+            {/* DATE SELECTION CARD */}
+            <View style={{ backgroundColor: '#FFFFFF', borderRadius: 24, padding: 20, marginBottom: 20, shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 15, elevation: 2, borderWidth: 1, borderColor: '#F2F4F6' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15 }}>
+                <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#F8F9FB', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                  <Feather name="calendar" size={18} color="#1A6BFF" />
+                </View>
+                <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 15 }}>¿Cuándo lo necesitas?</Text>
+              </View>
+              
+              <TouchableOpacity 
+                onPress={() => setShowDatePicker(true)}
+                style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8F9FB', borderRadius: 16, padding: 15, borderWidth: 1, borderColor: '#F2F4F6' }}
+              >
+                <Feather name="clock" size={18} color="#1A6BFF" style={{ marginRight: 12 }} />
+                <Text style={{ flex: 1, color: '#191C1E', fontFamily: 'Montserrat_700Bold', fontSize: 14 }}>
+                  {scheduledDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </Text>
+                <Feather name="edit-2" size={16} color="#8B8FA8" />
+              </TouchableOpacity>
+
+              {showDatePicker && (
+                <DateTimePicker
+                  value={scheduledDate}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  minimumDate={new Date()}
+                  onChange={(event, selectedDate) => {
+                    setShowDatePicker(false);
+                    if (selectedDate) setScheduledDate(selectedDate);
+                  }}
+                />
+              )}
             </View>
 
             {/* DURATION CARD */}
