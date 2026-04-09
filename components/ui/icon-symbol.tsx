@@ -1,29 +1,24 @@
-// Fallback for using MaterialIcons on Android and web.
-
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { SymbolWeight, SymbolViewProps } from 'expo-symbols';
+import * as LucideIcons from 'lucide-react-native';
 import { ComponentProps } from 'react';
-import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
-
-type IconMapping = Record<SymbolViewProps['name'], ComponentProps<typeof MaterialIcons>['name']>;
-type IconSymbolName = keyof typeof MAPPING;
+import { type StyleProp, type ViewStyle } from 'react-native';
 
 /**
- * Add your SF Symbols to Material Icons mappings here.
- * - see Material Icons in the [Icons Directory](https://icons.expo.fyi).
- * - see SF Symbols in the [SF Symbols](https://developer.apple.com/sf-symbols/) app.
+ * Mapeo de nombres de SF Symbols a iconos de Lucide (Regla 6 del Style Guide).
+ * Lucide ofrece el estilo 'Outline, trazo 2px' que Xpogo requiere.
  */
 const MAPPING = {
-  'house.fill': 'home',
-  'paperplane.fill': 'send',
-  'chevron.left.forwardslash.chevron.right': 'code',
-  'chevron.right': 'chevron-right',
-} as IconMapping;
+  'house.fill': 'House',
+  'paperplane.fill': 'Send',
+  'chevron.left.forwardslash.chevron.right': 'Code2',
+  'chevron.right': 'ChevronRight',
+} as const;
+
+export type IconSymbolName = keyof typeof MAPPING;
 
 /**
- * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.
- * This ensures a consistent look across platforms, and optimal resource usage.
- * Icon `name`s are based on SF Symbols and require manual mapping to Material Icons.
+ * Un componente de iconos unificado que utiliza la librería oficial Lucide React Native.
+ * Esto asegura consistencia visual y cumple estrictamente con el sistema de diseño Xpogo.
+ * Estilo: Outline, trazo 2px (especificado por la Regla 6).
  */
 export function IconSymbol({
   name,
@@ -33,9 +28,22 @@ export function IconSymbol({
 }: {
   name: IconSymbolName;
   size?: number;
-  color: string | OpaqueColorValue;
-  style?: StyleProp<TextStyle>;
-  weight?: SymbolWeight;
+  color: string;
+  style?: StyleProp<ViewStyle>;
 }) {
-  return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;
+  const IconComponent = LucideIcons[MAPPING[name]];
+  
+  if (!IconComponent) {
+    console.warn(`Icon ${name} (mapped to ${MAPPING[name]}) not found in LucideIcons`);
+    return null;
+  }
+  
+  return (
+    <IconComponent 
+      color={color} 
+      size={size} 
+      strokeWidth={2} 
+      style={style} 
+    />
+  );
 }

@@ -10,7 +10,7 @@ import * as Location from 'expo-location';
 import MapView, { Marker } from 'react-native-maps';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useFonts, Montserrat_400Regular, Montserrat_700Bold, Montserrat_900Black } from '@expo-google-fonts/montserrat';
+import { useFonts, Inter_500Medium } from '@expo-google-fonts/inter';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { supabase } from '../../lib/supabase';
 
@@ -722,7 +722,7 @@ function HomeScreen({ session, setSession }) {
                 onSubmitEditing={() => handleSmartSearch()}
                 placeholder="Ej: Necesito arreglar..."
                 placeholderTextcolor="#424655"
-                style={{ flex: 1, color: '#191C1E', fontFamily: 'Montserrat_400Regular', fontSize: 14 }}
+                style={{ flex: 1, color: '#191C1E', fontFamily: 'Inter_500Medium', fontSize: 14 }}
                 editable={!isSearching}
                 returnKeyType="search"
                 autoFocus={true}
@@ -740,7 +740,7 @@ function HomeScreen({ session, setSession }) {
           </View>
 
           <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 24 }}>
-            <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 16, marginBottom: 20 }}>Búsquedas recientes</Text>
+            <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 16, marginBottom: 20 }}>Búsquedas recientes</Text>
             {recentSearches.map((term, index) => (
               <TouchableOpacity 
                 key={index}
@@ -751,7 +751,7 @@ function HomeScreen({ session, setSession }) {
                 style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)', paddingHorizontal: 16, paddingVertical: 16, borderRadius: 12, marginBottom: 10, borderWidth: 1, borderColor: '#F2F4F6' }}
               >
                 <Feather name="clock" size={18} color="#424655" style={{ marginRight: 12 }} />
-                <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#191C1E', fontSize: 14, flex: 1 }}>{term}</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 14, flex: 1 }}>{term}</Text>
                 <Feather name="arrow-up-left" size={18} color="#5A5E73" />
               </TouchableOpacity>
             ))}
@@ -770,7 +770,7 @@ function HomeScreen({ session, setSession }) {
                   <TouchableOpacity onPress={() => setSelectedOrder(null)} style={{ marginRight: 15 }}>
                     <Feather name="arrow-left" size={24} color="#191C1E" />
                   </TouchableOpacity>
-                  <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 20 }}>Detalle del Trabajo</Text>
+                  <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 20 }}>Detalle del Trabajo</Text>
                </View>
 
                <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
@@ -781,19 +781,19 @@ function HomeScreen({ session, setSession }) {
                           <MaterialCommunityIcons name="account-hard-hat" size={28} color="#1A6BFF" />
                        </View>
                        <View style={{ marginLeft: 15 }}>
-                          <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 16 }}>{selectedOrder.tasker}</Text>
-                          <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 12 }}>{selectedOrder.service}</Text>
+                          <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 16 }}>{selectedOrder.tasker}</Text>
+                          <Text style={{ fontFamily: 'Inter_500Medium', color: '#424655', fontSize: 12 }}>{selectedOrder.service}</Text>
                        </View>
                     </View>
 
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingTop: 15, borderTopWidth: 1, borderTopColor: '#F8F9FB' }}>
                        <View>
-                          <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 10, textTransform: 'uppercase' }}>Fecha</Text>
-                          <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 13 }}>{selectedOrder.date}</Text>
+                          <Text style={{ fontFamily: 'Inter_500Medium', color: '#8B8FA8', fontSize: 10, textTransform: 'uppercase' }}>Fecha</Text>
+                          <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 13 }}>{selectedOrder.date}</Text>
                        </View>
                        <View style={{ alignItems: 'flex-end' }}>
-                          <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 10, textTransform: 'uppercase' }}>Valor Pagado</Text>
-                          <Text style={{ fontFamily: 'Montserrat_900Black', color: '#22C55E', fontSize: 13 }}>${selectedOrder.total}</Text>
+                          <Text style={{ fontFamily: 'Inter_500Medium', color: '#8B8FA8', fontSize: 10, textTransform: 'uppercase' }}>Valor Pagado</Text>
+                          <Text style={{ fontFamily: 'Inter_500Medium', color: '#22C55E', fontSize: 13 }}>${selectedOrder.total}</Text>
                        </View>
                     </View>
                   </View>
@@ -801,16 +801,16 @@ function HomeScreen({ session, setSession }) {
                   {/* LOCATION & TIP */}
                   <View style={{ backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, marginBottom: 20, borderWidth: 1, borderColor: '#F2F4F6' }}>
                      <View style={{ marginBottom: 15 }}>
-                        <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 14, marginBottom: 8 }}>📍 Ubicación del Servicio</Text>
-                        <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 13 }}>{selectedOrder.location}</Text>
+                        <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 14, marginBottom: 8 }}>📍 Ubicación del Servicio</Text>
+                        <Text style={{ fontFamily: 'Inter_500Medium', color: '#424655', fontSize: 13 }}>{selectedOrder.location}</Text>
                      </View>
                      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                         <View>
-                           <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 14, marginBottom: 4 }}>Propina</Text>
-                           <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#22C55E', fontSize: 13 }}>$5.00 (Agradecido)</Text>
+                           <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 14, marginBottom: 4 }}>Propina</Text>
+                           <Text style={{ fontFamily: 'Inter_500Medium', color: '#22C55E', fontSize: 13 }}>$5.00 (Agradecido)</Text>
                         </View>
                         <View style={{ alignItems: 'flex-end' }}>
-                           <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 14, marginBottom: 4 }}>Calificación</Text>
+                           <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 14, marginBottom: 4 }}>Calificación</Text>
                            <View style={{ flexDirection: 'row' }}>
                               {[1,2,3,4,5].map(s => <Feather key={s} name="star" size={14} color="#F59E0B" fill="#F59E0B" />)}
                            </View>
@@ -819,19 +819,19 @@ function HomeScreen({ session, setSession }) {
                   </View>
 
                   {/* HELP & SECURITY */}
-                  <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 16, marginBottom: 15, marginTop: 10 }}>Ayuda y Seguridad</Text>
+                  <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 16, marginBottom: 15, marginTop: 10 }}>Ayuda y Seguridad</Text>
                   <TouchableOpacity style={{ backgroundColor: '#FFFFFF', padding: 18, borderRadius: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#FF5C3A22' }}>
                      <Feather name="shield" size={20} color="#FF5C3A" />
                      <View style={{ marginLeft: 15, flex: 1 }}>
-                        <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 14 }}>Informa un asunto de seguridad</Text>
-                        <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 11 }}>Infórmanos sobre cualquier problema</Text>
+                        <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 14 }}>Informa un asunto de seguridad</Text>
+                        <Text style={{ fontFamily: 'Inter_500Medium', color: '#8B8FA8', fontSize: 11 }}>Infórmanos sobre cualquier problema</Text>
                      </View>
                      <Feather name="chevron-right" size={18} color="#D1D5DB" />
                   </TouchableOpacity>
 
                   <TouchableOpacity style={{ backgroundColor: '#FFFFFF', padding: 18, borderRadius: 16, marginBottom: 30, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#F2F4F6' }}>
                      <Feather name="message-circle" size={20} color="#1A6BFF" />
-                     <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 14, marginLeft: 15, flex: 1 }}>Contactar al Tasker</Text>
+                     <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 14, marginLeft: 15, flex: 1 }}>Contactar al Tasker</Text>
                      <Feather name="chevron-right" size={18} color="#D1D5DB" />
                   </TouchableOpacity>
 
@@ -839,8 +839,8 @@ function HomeScreen({ session, setSession }) {
                   <TouchableOpacity style={{ backgroundColor: '#191C1E', padding: 20, borderRadius: 20, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 10, elevation: 5, flexDirection: 'row', justifyContent: 'center' }}>
                      <MaterialCommunityIcons name="robot" size={24} color="#1A6BFF" style={{ marginRight: 12 }} />
                      <View>
-                        <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFFFFF', fontSize: 15 }}>SOPORTE IA SERVITASK</Text>
-                        <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#FFFFFF99', fontSize: 11 }}>Chat inteligente 24/7 disponible</Text>
+                        <Text style={{ fontFamily: 'Inter_500Medium', color: '#FFFFFF', fontSize: 15 }}>SOPORTE IA SERVITASK</Text>
+                        <Text style={{ fontFamily: 'Inter_500Medium', color: '#FFFFFF99', fontSize: 11 }}>Chat inteligente 24/7 disponible</Text>
                      </View>
                   </TouchableOpacity>
                </ScrollView>
@@ -850,15 +850,15 @@ function HomeScreen({ session, setSession }) {
             <View style={{ flex: 1, backgroundColor: '#F4F8FF' }}>
                <View style={{ padding: 24, paddingTop: Platform.OS === 'android' ? 60 : 40, borderBottomWidth: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                   <View>
-                    <Text style={{ fontFamily: 'Montserrat_900Black', color: '#001A4D', fontSize: 24 }}>Mis Pedidos</Text>
-                    <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 13, marginTop: 4 }}>Gestiona tus servicios activos.</Text>
+                    <Text style={{ fontFamily: 'Inter_500Medium', color: '#001A4D', fontSize: 24 }}>Mis Pedidos</Text>
+                    <Text style={{ fontFamily: 'Inter_500Medium', color: '#424655', fontSize: 13, marginTop: 4 }}>Gestiona tus servicios activos.</Text>
                   </View>
                   <TouchableOpacity 
                     onPress={() => transitionToStep('agenda')}
                     style={{ backgroundColor: '#1A6BFF', paddingHorizontal: 15, paddingVertical: 10, borderRadius: 12, flexDirection: 'row', alignItems: 'center', shadowColor: '#1A6BFF', shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 }}
                   >
                     <Feather name="calendar" size={16} color="#FFFFFF" style={{ marginRight: 8 }} />
-                    <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#FFFFFF', fontSize: 12 }}>AGENDA</Text>
+                    <Text style={{ fontFamily: 'Inter_500Medium', color: '#FFFFFF', fontSize: 12 }}>AGENDA</Text>
                   </TouchableOpacity>
                </View>
 
@@ -871,8 +871,8 @@ function HomeScreen({ session, setSession }) {
                             <Feather name="search" size={20} color="#FFFFFF" />
                          </View>
                        </View>
-                       <Text style={{ fontFamily: 'Montserrat_900Black', color: '#001A4D', fontSize: 18, textAlign: 'center', marginBottom: 15 }}>No tienes pedidos activos</Text>
-                       <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 13, textAlign: 'center', paddingHorizontal: 20, lineHeight: 22, marginBottom: 40 }}>
+                       <Text style={{ fontFamily: 'Inter_500Medium', color: '#001A4D', fontSize: 18, textAlign: 'center', marginBottom: 15 }}>No tienes pedidos activos</Text>
+                       <Text style={{ fontFamily: 'Inter_500Medium', color: '#424655', fontSize: 13, textAlign: 'center', paddingHorizontal: 20, lineHeight: 22, marginBottom: 40 }}>
                           Tus servicios contratados aparecerán aquí. ¡Comienza solicitando un profesional!
                        </Text>
                        
@@ -880,16 +880,16 @@ function HomeScreen({ session, setSession }) {
                           onPress={() => { setSelectedCategory(null); setSelectedSubs([]); resetFormState(); transitionToStep('category'); }}
                           style={{ backgroundColor: '#1A6BFF', paddingVertical: 18, paddingHorizontal: 30, borderRadius: 12, width: '100%', alignItems: 'center', marginBottom: 25 }}
                        >
-                          <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#FFFFFF', fontSize: 15 }}>Solicitar un Profesional</Text>
+                          <Text style={{ fontFamily: 'Inter_500Medium', color: '#FFFFFF', fontSize: 15 }}>Solicitar un Profesional</Text>
                        </TouchableOpacity>
 
                        <TouchableOpacity>
-                          <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', fontSize: 13 }}>Ver Historial de Pedidos</Text>
+                          <Text style={{ fontFamily: 'Inter_500Medium', color: '#1A6BFF', fontSize: 13 }}>Ver Historial de Pedidos</Text>
                        </TouchableOpacity>
                     </View>
                   ) : (
                     <>
-                      <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 16, marginBottom: 20 }}>Historial Reciente</Text>
+                      <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 16, marginBottom: 20 }}>Historial Reciente</Text>
                       {/* MOCK DATA FOR DEMONSTRATION */}
                       {[
                         { id: 1, tasker: 'Marco Antonio', service: 'Reparación de tubería', date: '01 Abr, 2026', total: '45.00', location: 'Av. Juan Tanca Marengo, Guayaquil' },
@@ -904,13 +904,13 @@ function HomeScreen({ session, setSession }) {
                               <MaterialCommunityIcons name="file-document-outline" size={24} color="#1A6BFF" />
                            </View>
                            <View style={{ marginLeft: 15, flex: 1 }}>
-                              <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 14 }}>{order.service}</Text>
-                              <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 12 }}>Con {order.tasker}</Text>
+                              <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 14 }}>{order.service}</Text>
+                              <Text style={{ fontFamily: 'Inter_500Medium', color: '#8B8FA8', fontSize: 12 }}>Con {order.tasker}</Text>
                            </View>
                            <View style={{ alignItems: 'flex-end' }}>
-                              <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 14 }}>${order.total}</Text>
+                              <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 14 }}>${order.total}</Text>
                               <View style={{ backgroundColor: '#22C55E11', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, marginTop: 4 }}>
-                                 <Text style={{ color: '#22C55E', fontFamily: 'Montserrat_700Bold', fontSize: 9 }}>COMPLETADO</Text>
+                                 <Text style={{ color: '#22C55E', fontFamily: 'Inter_500Medium', fontSize: 9 }}>COMPLETADO</Text>
                               </View>
                            </View>
                         </TouchableOpacity>
@@ -925,15 +925,15 @@ function HomeScreen({ session, setSession }) {
           <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingVertical: 15, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#F2F4F6' }}>
             <TouchableOpacity onPress={() => { setSelectedCategory(null); setSelectedSubs([]); resetFormState(); transitionToStep('category'); }} style={{ alignItems: 'center' }}>
               <Feather name="home" size={24} color="#424655" />
-              <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 10, marginTop: 4 }}>Inicio</Text>
+              <Text style={{ fontFamily: 'Inter_500Medium', color: '#424655', fontSize: 10, marginTop: 4 }}>Inicio</Text>
             </TouchableOpacity>
             <TouchableOpacity style={{ alignItems: 'center' }}>
               <Feather name="clipboard" size={24} color="#1A6BFF" />
-              <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', fontSize: 10, marginTop: 4 }}>Pedidos</Text>
+              <Text style={{ fontFamily: 'Inter_500Medium', color: '#1A6BFF', fontSize: 10, marginTop: 4 }}>Pedidos</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => transitionToStep('profile')} style={{ alignItems: 'center' }}>
               <Feather name="user" size={24} color="#424655" />
-              <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 10, marginTop: 4 }}>Perfil</Text>
+              <Text style={{ fontFamily: 'Inter_500Medium', color: '#424655', fontSize: 10, marginTop: 4 }}>Perfil</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -964,14 +964,14 @@ function HomeScreen({ session, setSession }) {
             {/* Profile Info Centered */}
             <View style={{ alignItems: 'center' }}>
                <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#1A6BFF', alignItems: 'center', justifyContent: 'center', marginBottom: 15 }}>
-                  <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFFFFF', fontSize: 32 }}>{getInitials(fullName)}</Text>
+                  <Text style={{ fontFamily: 'Inter_500Medium', color: '#FFFFFF', fontSize: 32 }}>{getInitials(fullName)}</Text>
                </View>
-               <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFFFFF', fontSize: 20, marginBottom: 5 }}>{fullName}</Text>
-               <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 12, marginBottom: 15 }}>{userEmail}</Text>
+               <Text style={{ fontFamily: 'Inter_500Medium', color: '#FFFFFF', fontSize: 20, marginBottom: 5 }}>{fullName}</Text>
+               <Text style={{ fontFamily: 'Inter_500Medium', color: '#8B8FA8', fontSize: 12, marginBottom: 15 }}>{userEmail}</Text>
                
                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF15', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20 }}>
                   <Feather name="star" size={12} color="#F59E0B" fill="#F59E0B" />
-                  <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#FFFFFF', fontSize: 12, marginLeft: 8 }}>{userRating} Puntuación</Text>
+                  <Text style={{ fontFamily: 'Inter_500Medium', color: '#FFFFFF', fontSize: 12, marginLeft: 8 }}>{userRating} Puntuación</Text>
                </View>
             </View>
           </View>
@@ -997,7 +997,7 @@ function HomeScreen({ session, setSession }) {
                   <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: '#1A6BFF10', alignItems: 'center', justifyContent: 'center' }}>
                     <Feather name={item.icon} size={16} color="#1A6BFF" />
                   </View>
-                  <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 14, flex: 1, marginLeft: 15 }}>{item.label}</Text>
+                  <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 14, flex: 1, marginLeft: 15 }}>{item.label}</Text>
                   <Feather name="chevron-right" size={16} color="#8B8FA8" />
                 </TouchableOpacity>
               ))}
@@ -1017,7 +1017,7 @@ function HomeScreen({ session, setSession }) {
                   <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: item.bg, alignItems: 'center', justifyContent: 'center' }}>
                     <Feather name={item.icon} size={16} color={item.color} />
                   </View>
-                  <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 14, flex: 1, marginLeft: 15 }}>{item.label}</Text>
+                  <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 14, flex: 1, marginLeft: 15 }}>{item.label}</Text>
                   <Feather name="chevron-right" size={16} color="#8B8FA8" />
                 </TouchableOpacity>
               ))}
@@ -1028,15 +1028,15 @@ function HomeScreen({ session, setSession }) {
           <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingVertical: 15, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#F2F4F6' }}>
             <TouchableOpacity onPress={() => { setSelectedCategory(null); setSelectedSubs([]); resetFormState(); transitionToStep('category'); }} style={{ alignItems: 'center' }}>
               <Feather name="home" size={24} color="#424655" />
-              <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 10, marginTop: 4 }}>Inicio</Text>
+              <Text style={{ fontFamily: 'Inter_500Medium', color: '#424655', fontSize: 10, marginTop: 4 }}>Inicio</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => transitionToStep('orders')} style={{ alignItems: 'center' }}>
               <Feather name="clipboard" size={24} color="#424655" />
-              <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 10, marginTop: 4 }}>Pedidos</Text>
+              <Text style={{ fontFamily: 'Inter_500Medium', color: '#424655', fontSize: 10, marginTop: 4 }}>Pedidos</Text>
             </TouchableOpacity>
             <TouchableOpacity style={{ alignItems: 'center' }}>
               <Feather name="user" size={24} color="#1A6BFF" />
-              <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', fontSize: 10, marginTop: 4 }}>Perfil</Text>
+              <Text style={{ fontFamily: 'Inter_500Medium', color: '#1A6BFF', fontSize: 10, marginTop: 4 }}>Perfil</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -1058,7 +1058,7 @@ function HomeScreen({ session, setSession }) {
               <TouchableOpacity onPress={() => transitionToStep('orders')} style={{ marginRight: 15 }}>
                 <Feather name="arrow-left" size={24} color="#191C1E" />
               </TouchableOpacity>
-              <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 20 }}>Agenda</Text>
+              <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 20 }}>Agenda</Text>
             </View>
             <TouchableOpacity style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#F4F8FF', alignItems: 'center', justifyContent: 'center' }}>
               <Feather name="more-vertical" size={20} color="#1A6BFF" />
@@ -1084,9 +1084,9 @@ function HomeScreen({ session, setSession }) {
                     arrowColor: '#1A6BFF',
                     monthTextColor: '#191C1E',
                     indicatorColor: '#1A6BFF',
-                    textDayFontFamily: 'Montserrat_400Regular',
-                    textMonthFontFamily: 'Montserrat_700Bold',
-                    textDayHeaderFontFamily: 'Montserrat_400Regular',
+                    textDayFontFamily: 'Inter_500Medium',
+                    textMonthFontFamily: 'Inter_500Medium',
+                    textDayHeaderFontFamily: 'Inter_500Medium',
                     textDayFontSize: 14,
                     textMonthFontSize: 16,
                     textDayHeaderFontSize: 12,
@@ -1110,11 +1110,11 @@ function HomeScreen({ session, setSession }) {
             {/* DAILY TASKS */}
             <View style={{ paddingHorizontal: 24 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-                <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 16 }}>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 16 }}>
                   {selectedAgendaDate === formatLocalDate(new Date()) ? 'Tareas para hoy' : `Tareas el ${new Date(selectedAgendaDate + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}`}
                 </Text>
                 <View style={{ backgroundColor: '#1A6BFF11', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 }}>
-                  <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', fontSize: 11 }}>{jobsForSelectedDate.length} Tareas</Text>
+                  <Text style={{ fontFamily: 'Inter_500Medium', color: '#1A6BFF', fontSize: 11 }}>{jobsForSelectedDate.length} Tareas</Text>
                 </View>
               </View>
 
@@ -1123,8 +1123,8 @@ function HomeScreen({ session, setSession }) {
                   <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#F8F9FB', alignItems: 'center', justifyContent: 'center', marginBottom: 15 }}>
                     <Feather name="calendar" size={24} color="#8B8FA8" />
                   </View>
-                  <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 15, marginBottom: 5 }}>Día disponible</Text>
-                  <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 12, textAlign: 'center' }}>No tienes tareas programadas para este día.</Text>
+                  <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 15, marginBottom: 5 }}>Día disponible</Text>
+                  <Text style={{ fontFamily: 'Inter_500Medium', color: '#8B8FA8', fontSize: 12, textAlign: 'center' }}>No tienes tareas programadas para este día.</Text>
                 </View>
               ) : (
                 jobsForSelectedDate.map((job) => (
@@ -1137,12 +1137,12 @@ function HomeScreen({ session, setSession }) {
                       <MaterialCommunityIcons name={job.category_icon || "clipboard-text-outline"} size={26} color={job.category_color || "#1A6BFF"} />
                     </View>
                     <View style={{ flex: 1, marginLeft: 15 }}>
-                      <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 14 }}>{job.title || job.service}</Text>
+                      <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 14 }}>{job.title || job.service}</Text>
                       <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
                         <Feather name="clock" size={12} color="#8B8FA8" />
-                        <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 11, marginLeft: 5 }}>{job.time || '10:00 AM'}</Text>
+                        <Text style={{ fontFamily: 'Inter_500Medium', color: '#8B8FA8', fontSize: 11, marginLeft: 5 }}>{job.time || '10:00 AM'}</Text>
                         <Text style={{ marginHorizontal: 5, color: '#D1D5DB' }}>•</Text>
-                        <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', fontSize: 11 }}>{job.tasker || 'Pendiente'}</Text>
+                        <Text style={{ fontFamily: 'Inter_500Medium', color: '#1A6BFF', fontSize: 11 }}>{job.tasker || 'Pendiente'}</Text>
                       </View>
                     </View>
                     <Feather name="chevron-right" size={20} color="#D1D5DB" />
@@ -1156,15 +1156,15 @@ function HomeScreen({ session, setSession }) {
           <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingVertical: 15, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#F2F4F6' }}>
             <TouchableOpacity onPress={() => transitionToStep('category')} style={{ alignItems: 'center' }}>
               <Feather name="home" size={24} color="#424655" />
-              <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 10, marginTop: 4 }}>Inicio</Text>
+              <Text style={{ fontFamily: 'Inter_500Medium', color: '#424655', fontSize: 10, marginTop: 4 }}>Inicio</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => transitionToStep('orders')} style={{ alignItems: 'center' }}>
               <Feather name="clipboard" size={24} color="#1A6BFF" />
-              <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', fontSize: 10, marginTop: 4 }}>Pedidos</Text>
+              <Text style={{ fontFamily: 'Inter_500Medium', color: '#1A6BFF', fontSize: 10, marginTop: 4 }}>Pedidos</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => transitionToStep('profile')} style={{ alignItems: 'center' }}>
               <Feather name="user" size={24} color="#424655" />
-              <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 10, marginTop: 4 }}>Perfil</Text>
+              <Text style={{ fontFamily: 'Inter_500Medium', color: '#424655', fontSize: 10, marginTop: 4 }}>Perfil</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -1263,7 +1263,7 @@ function HomeScreen({ session, setSession }) {
         <View style={{ height: '45%', backgroundColor: '#FFFFFF', borderTopLeftRadius: 35, borderTopRightRadius: 35, marginTop: -35, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 20, elevation: 10, padding: 24 }}>
             <View style={{ alignItems: 'center', marginBottom: 15 }}>
                 <View style={{ width: 40, height: 4, backgroundColor: '#F2F4F6', borderRadius: 2, marginBottom: 15 }} />
-                <Text style={{ fontFamily: 'Montserrat_900Black', color: '#1A6BFF', fontSize: 18, textAlign: 'center', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: '#1A6BFF', fontSize: 18, textAlign: 'center', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                     CONECTÁNDOTE CON{"\n"}TASKERS CERCA TUYO
                 </Text>
             </View>
@@ -1271,23 +1271,23 @@ function HomeScreen({ session, setSession }) {
             {/* QUICK SUMMARY BOX */}
             <View style={{ flexDirection: 'row', backgroundColor: '#F8F9FB', borderRadius: 16, padding: 12, marginBottom: 15, borderWidth: 1, borderColor: '#F2F4F6' }}>
                 <View style={{ flex: 1, borderRightWidth: 1, borderRightColor: '#F2F4F6', paddingRight: 10 }}>
-                    <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#8B8FA8', fontSize: 9, textTransform: 'uppercase' }}>Categoría</Text>
-                    <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 13 }} numberOfLines={1}>{selectedCategory?.label || 'Servicio'}</Text>
+                    <Text style={{ fontFamily: 'Inter_500Medium', color: '#8B8FA8', fontSize: 9, textTransform: 'uppercase' }}>Categoría</Text>
+                    <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 13 }} numberOfLines={1}>{selectedCategory?.label || 'Servicio'}</Text>
                 </View>
                 <View style={{ flex: 1, paddingLeft: 10 }}>
-                    <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#8B8FA8', fontSize: 9, textTransform: 'uppercase' }}>Presupuesto Estimado</Text>
-                    <Text style={{ fontFamily: 'Montserrat_900Black', color: '#22C55E', fontSize: 13 }}>${priceMin} - ${priceMax} USD</Text>
+                    <Text style={{ fontFamily: 'Inter_500Medium', color: '#8B8FA8', fontSize: 9, textTransform: 'uppercase' }}>Presupuesto Estimado</Text>
+                    <Text style={{ fontFamily: 'Inter_500Medium', color: '#22C55E', fontSize: 13 }}>${priceMin} - ${priceMax} USD</Text>
                 </View>
             </View>
 
             {/* SERVICES SELECTED */}
             {selectedSubs && selectedSubs.length > 0 && (
                 <View style={{ marginBottom: 20 }}>
-                    <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#8B8FA8', fontSize: 10, textTransform: 'uppercase', marginBottom: 8 }}>Servicios Seleccionados ({selectedSubs.length})</Text>
+                    <Text style={{ fontFamily: 'Inter_500Medium', color: '#8B8FA8', fontSize: 10, textTransform: 'uppercase', marginBottom: 8 }}>Servicios Seleccionados ({selectedSubs.length})</Text>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
                         {selectedSubs.map((sub, idx) => (
                             <View key={idx} style={{ backgroundColor: 'rgba(26, 107, 255, 0.08)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, marginRight: 8, marginBottom: 8, borderWidth: 1, borderColor: 'rgba(26, 107, 255, 0.15)' }}>
-                                <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', fontSize: 11 }}>{sub}</Text>
+                                <Text style={{ fontFamily: 'Inter_500Medium', color: '#1A6BFF', fontSize: 11 }}>{sub}</Text>
                             </View>
                         ))}
                     </View>
@@ -1295,14 +1295,14 @@ function HomeScreen({ session, setSession }) {
             )}
 
             <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
-                <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 14, marginBottom: 15, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 14, marginBottom: 15, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                     {proposals.length === 0 ? 'Buscando interesados...' : `Taskers interesados (${proposals.length})`}
                 </Text>
 
                 {proposals.length === 0 ? (
                     <View style={{ alignItems: 'center', marginTop: 10 }}>
                          <ActivityIndicator size="small" color="#1A6BFF" style={{ marginBottom: 15 }} />
-                         <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontStyle: 'italic', fontSize: 13, textAlign: 'center' }}>
+                         <Text style={{ fontFamily: 'Inter_500Medium', color: '#8B8FA8', fontStyle: 'italic', fontSize: 13, textAlign: 'center' }}>
                             Los mejores profesionales están revisando tu pedido...
                          </Text>
                     </View>
@@ -1313,17 +1313,17 @@ function HomeScreen({ session, setSession }) {
                                  <MaterialCommunityIcons name="account-hard-hat" size={30} color="#1A6BFF" />
                             </View>
                             <View style={{ flex: 1, marginLeft: 15 }}>
-                                <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 15 }}>Marco Antonio</Text>
+                                <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 15 }}>Marco Antonio</Text>
                                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                     <Feather name="star" size={10} color="#F59E0B" fill="#F59E0B" />
-                                    <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 11, marginLeft: 4 }}>4.9</Text>
-                                    <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 11, marginLeft: 4 }}>(124)</Text>
+                                    <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 11, marginLeft: 4 }}>4.9</Text>
+                                    <Text style={{ fontFamily: 'Inter_500Medium', color: '#8B8FA8', fontSize: 11, marginLeft: 4 }}>(124)</Text>
                                 </View>
                                 <TouchableOpacity 
                                     onPress={() => Alert.alert("¡Chat Seguro!", "Conectándote...")} 
                                     style={{ backgroundColor: '#1A6BFF', alignSelf: 'flex-start', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 10, marginTop: 8, shadowColor: '#1A6BFF', shadowOpacity: 0.3, shadowRadius: 5 }}
                                 >
-                                    <Text style={{ color: '#FFF', fontFamily: 'Montserrat_700Bold', fontSize: 11 }}>ELEGIR Y CHATEAR</Text>
+                                    <Text style={{ color: '#FFF', fontFamily: 'Inter_500Medium', fontSize: 11 }}>ELEGIR Y CHATEAR</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -1356,7 +1356,7 @@ function HomeScreen({ session, setSession }) {
                 }}
                 style={{ backgroundColor: '#FFF', padding: 15, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#FF5C3A33' }}
             >
-                <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#FF5C3A', fontSize: 14 }}>Cancelar Búsqueda</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: '#FF5C3A', fontSize: 14 }}>Cancelar Búsqueda</Text>
             </TouchableOpacity>
         </View>
       </Animated.View>
@@ -1374,9 +1374,9 @@ function HomeScreen({ session, setSession }) {
                 <Feather name="arrow-left" size={24} color="#191C1E" />
               </TouchableOpacity>
             <View>
-              <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 20 }}>Detalles de solicitud</Text>
+              <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 20 }}>Detalles de solicitud</Text>
               {isAiFiltered && selectedSubs?.length > 0 && (
-                <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#16A34A', fontSize: 12, marginTop: 2 }}>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: '#16A34A', fontSize: 12, marginTop: 2 }}>
                   ✦ Inteligencia Artificial: {selectedSubs[0]}
                 </Text>
               )}
@@ -1388,7 +1388,7 @@ function HomeScreen({ session, setSession }) {
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 20 }}>
               {selectedSubs?.map((s, i) => (
                 <View key={i} style={{ backgroundColor: 'rgba(26, 107, 255, 0.1)', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20, marginRight: 8, marginBottom: 8, borderWidth: 1, borderColor: 'rgba(26, 107, 255, 0.15)' }}>
-                  <Text style={{ color: '#1A6BFF', fontFamily: 'Montserrat_700Bold', fontSize: 12 }}>{s}</Text>
+                  <Text style={{ color: '#1A6BFF', fontFamily: 'Inter_500Medium', fontSize: 12 }}>{s}</Text>
                 </View>
               ))}
             </View>
@@ -1400,12 +1400,12 @@ function HomeScreen({ session, setSession }) {
                 <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#F8F9FB', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
                   <Feather name="map-pin" size={18} color="#1A6BFF" />
                 </View>
-                <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 15 }}>¿Dónde lo necesitas?</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 15 }}>¿Dónde lo necesitas?</Text>
               </View>
               
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
                 <TouchableOpacity onPress={() => setShowMapModal(true)} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8F9FB', borderRadius: 16, padding: 15, borderWidth: 1, borderColor: '#F2F4F6' }}>
-                  <Text style={{ flex: 1, color: '#191C1E', fontFamily: 'Montserrat_700Bold', fontSize: 14 }} numberOfLines={1}>{location}</Text>
+                  <Text style={{ flex: 1, color: '#191C1E', fontFamily: 'Inter_500Medium', fontSize: 14 }} numberOfLines={1}>{location}</Text>
                   <Feather name="chevron-down" size={20} color="#8B8FA8" />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={handleGetLocation} disabled={isLocating} style={{ width: 50, height: 50, backgroundColor: 'rgba(26, 107, 255, 0.1)', borderRadius: 16, marginLeft: 10, alignItems: 'center', justifyContent: 'center' }}>
@@ -1419,7 +1419,7 @@ function HomeScreen({ session, setSession }) {
                   onChangeText={setAddressDetails} 
                   placeholder="Detalles (Apto, Piso, Mz, Villa...)" 
                   placeholderTextColor="#8B8FA8" 
-                  style={{ flex: 1, color: '#191C1E', fontFamily: 'Montserrat_400Regular', fontSize: 14 }} 
+                  style={{ flex: 1, color: '#191C1E', fontFamily: 'Inter_500Medium', fontSize: 14 }} 
                 />
               </View>
             </View>
@@ -1430,7 +1430,7 @@ function HomeScreen({ session, setSession }) {
                 <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#F8F9FB', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
                   <Feather name="calendar" size={18} color="#1A6BFF" />
                 </View>
-                <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 15 }}>¿Cuándo lo necesitas?</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 15 }}>¿Cuándo lo necesitas?</Text>
               </View>
               
               <TouchableOpacity 
@@ -1438,7 +1438,7 @@ function HomeScreen({ session, setSession }) {
                 style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8F9FB', borderRadius: 16, padding: 15, borderWidth: 1, borderColor: '#F2F4F6' }}
               >
                 <Feather name="clock" size={18} color="#1A6BFF" style={{ marginRight: 12 }} />
-                <Text style={{ flex: 1, color: '#191C1E', fontFamily: 'Montserrat_700Bold', fontSize: 14 }}>
+                <Text style={{ flex: 1, color: '#191C1E', fontFamily: 'Inter_500Medium', fontSize: 14 }}>
                   {scheduledDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </Text>
                 <Feather name="edit-2" size={16} color="#8B8FA8" />
@@ -1464,7 +1464,7 @@ function HomeScreen({ session, setSession }) {
                 <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#F8F9FB', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
                   <Feather name="clock" size={18} color="#1A6BFF" />
                 </View>
-                <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 15 }}>¿Cuánto tiempo tomará?</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 15 }}>¿Cuánto tiempo tomará?</Text>
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 {['1h o fraccion', '2h-3h', '+4h'].map(opt => (
@@ -1479,7 +1479,7 @@ function HomeScreen({ session, setSession }) {
                       marginHorizontal: 4
                     }}
                   >
-                    <Text style={{ fontFamily: 'Montserrat_700Bold', color: duration === opt ? '#1A6BFF' : '#8B8FA8', fontSize: 12 }}>{opt}</Text>
+                    <Text style={{ fontFamily: 'Inter_500Medium', color: duration === opt ? '#1A6BFF' : '#8B8FA8', fontSize: 12 }}>{opt}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -1489,7 +1489,7 @@ function HomeScreen({ session, setSession }) {
             {selectedCategory?.id === 'construccion' && (
               <View style={{ backgroundColor: '#FFFFFF', borderRadius: 24, padding: 20, marginBottom: 20, shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 15, elevation: 2, borderWidth: 1, borderColor: '#F2F4F6' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15 }}>
-                  <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 15 }}>¿Necesitas medidas exactas?</Text>
+                  <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 15 }}>¿Necesitas medidas exactas?</Text>
                 </View>
                 <View style={{ flexDirection: 'row' }}>
                   {['NO', 'SÍ'].map(opt => (
@@ -1506,7 +1506,7 @@ function HomeScreen({ session, setSession }) {
                         shadowColor: '#1A6BFF', shadowOpacity: 0.3, shadowRadius: 8
                       }}
                     >
-                      <Text style={{ fontFamily: 'Montserrat_700Bold', color: needsMeasurements === opt ? (opt === 'SÍ' ? '#FFFFFF' : '#1A6BFF') : '#8B8FA8', fontSize: 14, textTransform: 'uppercase' }}>{opt}</Text>
+                      <Text style={{ fontFamily: 'Inter_500Medium', color: needsMeasurements === opt ? (opt === 'SÍ' ? '#FFFFFF' : '#1A6BFF') : '#8B8FA8', fontSize: 14, textTransform: 'uppercase' }}>{opt}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -1519,7 +1519,7 @@ function HomeScreen({ session, setSession }) {
                         <View style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: 'rgba(26, 107, 255, 0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
                           <Feather name="maximize" size={16} color="#1A6BFF" />
                         </View>
-                        <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 14 }}>¿Qué necesitas medir?</Text>
+                        <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 14 }}>¿Qué necesitas medir?</Text>
                       </View>
                       
                       <View style={{ backgroundColor: '#F8F9FB', borderRadius: 12, paddingHorizontal: 15, height: 50, borderWidth: 1, borderColor: '#F2F4F6', marginBottom: 15 }}>
@@ -1528,7 +1528,7 @@ function HomeScreen({ session, setSession }) {
                           onChangeText={setCustomMeasurement}
                           placeholder="Escribe aquí (ej. ventana, puerta, piso...)" 
                           placeholderTextColor="#8B8FA8"
-                          style={{ flex: 1, height: '100%', color: '#191C1E', fontFamily: 'Montserrat_400Regular', fontSize: 13 }}
+                          style={{ flex: 1, height: '100%', color: '#191C1E', fontFamily: 'Inter_500Medium', fontSize: 13 }}
                         />
                       </View>
 
@@ -1545,7 +1545,7 @@ function HomeScreen({ session, setSession }) {
                                 marginBottom: 8, marginRight: 8, borderWidth: 1, borderColor: isActive ? 'rgba(26, 107, 255, 0.2)' : 'transparent' 
                               }}
                             >
-                              <Text style={{ fontFamily: isActive ? 'Montserrat_700Bold' : 'Montserrat_400Regular', color: isActive ? '#1A6BFF' : '#424655', fontSize: 12 }}>{item}</Text>
+                              <Text style={{ fontFamily: isActive ? 'Inter_500Medium' : 'Inter_500Medium', color: isActive ? '#1A6BFF' : '#424655', fontSize: 12 }}>{item}</Text>
                             </TouchableOpacity>
                           )
                         })}
@@ -1558,7 +1558,7 @@ function HomeScreen({ session, setSession }) {
                         <View style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: 'rgba(26, 107, 255, 0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
                           <Feather name="camera" size={16} color="#1A6BFF" />
                         </View>
-                        <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 14 }}>¿Puedes subir fotos del área?</Text>
+                        <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 14 }}>¿Puedes subir fotos del área?</Text>
                       </View>
                       
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -1566,16 +1566,16 @@ function HomeScreen({ session, setSession }) {
                           <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2, marginBottom: 8 }}>
                             <Feather name="camera" size={20} color="#1A6BFF" />
                           </View>
-                          <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 12, marginBottom: 2 }}>Cámara</Text>
-                          <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 10 }}>Tomar foto</Text>
+                          <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 12, marginBottom: 2 }}>Cámara</Text>
+                          <Text style={{ fontFamily: 'Inter_500Medium', color: '#8B8FA8', fontSize: 10 }}>Tomar foto</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity onPress={() => handlePickMedia(false)} style={{ flex: 1, backgroundColor: '#F8F9FB', borderRadius: 16, padding: 15, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderStyle: 'dashed', borderColor: '#D1D5DB', marginLeft: 8 }}>
                           <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2, marginBottom: 8 }}>
                             <Feather name="image" size={20} color="#1A6BFF" />
                           </View>
-                          <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 12, marginBottom: 2 }}>Galería</Text>
-                          <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 10 }}>Subir archivo</Text>
+                          <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 12, marginBottom: 2 }}>Galería</Text>
+                          <Text style={{ fontFamily: 'Inter_500Medium', color: '#8B8FA8', fontSize: 10 }}>Subir archivo</Text>
                         </TouchableOpacity>
                       </View>
 
@@ -1599,7 +1599,7 @@ function HomeScreen({ session, setSession }) {
                         <View style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: 'rgba(26, 107, 255, 0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
                           <Feather name="tool" size={16} color="#1A6BFF" />
                         </View>
-                        <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 14 }}>¿Alguna herramienta específica?</Text>
+                        <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 14 }}>¿Alguna herramienta específica?</Text>
                       </View>
                       <View style={{ backgroundColor: '#F8F9FB', borderRadius: 12, paddingHorizontal: 15, height: 50, borderWidth: 1, borderColor: '#F2F4F6' }}>
                         <TextInput 
@@ -1607,7 +1607,7 @@ function HomeScreen({ session, setSession }) {
                           onChangeText={setSpecificTools}
                           placeholder="Ej: Escalera de 3 metros, láser..." 
                           placeholderTextColor="#8B8FA8"
-                          style={{ flex: 1, height: '100%', color: '#191C1E', fontFamily: 'Montserrat_400Regular', fontSize: 13 }}
+                          style={{ flex: 1, height: '100%', color: '#191C1E', fontFamily: 'Inter_500Medium', fontSize: 13 }}
                         />
                       </View>
                     </View>
@@ -1618,9 +1618,9 @@ function HomeScreen({ session, setSession }) {
                         <View style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: 'rgba(26, 107, 255, 0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
                           <MaterialCommunityIcons name="cash-multiple" size={16} color="#1A6BFF" />
                         </View>
-                        <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 14 }}>Presupuesto sugerido</Text>
+                        <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 14 }}>Presupuesto sugerido</Text>
                       </View>
-                      <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 11, marginBottom: 15, marginLeft: 42 }}>Valor por la toma de medidas</Text>
+                      <Text style={{ fontFamily: 'Inter_500Medium', color: '#8B8FA8', fontSize: 11, marginBottom: 15, marginLeft: 42 }}>Valor por la toma de medidas</Text>
                       
                       {/* Custom Slider */}
                       <View 
@@ -1650,13 +1650,13 @@ function HomeScreen({ session, setSession }) {
                       {/* Inputs min max */}
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
                         <View style={{ flex: 1, backgroundColor: '#F8F9FB', borderRadius: 12, padding: 12, alignItems: 'center' }}>
-                          <Text style={{ color: '#8B8FA8', fontSize: 9, fontFamily: 'Montserrat_700Bold', textTransform: 'uppercase' }}>MÍNIMO</Text>
-                          <Text style={{ fontSize: 16, fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', marginTop: 2 }}>${measurePriceMin}</Text>
+                          <Text style={{ color: '#8B8FA8', fontSize: 9, fontFamily: 'Inter_500Medium', textTransform: 'uppercase' }}>MÍNIMO</Text>
+                          <Text style={{ fontSize: 16, fontFamily: 'Inter_500Medium', color: '#1A6BFF', marginTop: 2 }}>${measurePriceMin}</Text>
                         </View>
                         <Text style={{ color: '#F2F4F6', fontSize: 24, marginHorizontal: 10 }}>-</Text>
                         <View style={{ flex: 1, backgroundColor: '#F8F9FB', borderRadius: 12, padding: 12, alignItems: 'center' }}>
-                          <Text style={{ color: '#8B8FA8', fontSize: 9, fontFamily: 'Montserrat_700Bold', textTransform: 'uppercase' }}>MÁXIMO</Text>
-                          <Text style={{ fontSize: 16, fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', marginTop: 2 }}>${measurePriceMax}</Text>
+                          <Text style={{ color: '#8B8FA8', fontSize: 9, fontFamily: 'Inter_500Medium', textTransform: 'uppercase' }}>MÁXIMO</Text>
+                          <Text style={{ fontSize: 16, fontFamily: 'Inter_500Medium', color: '#1A6BFF', marginTop: 2 }}>${measurePriceMax}</Text>
                         </View>
                       </View>
 
@@ -1674,7 +1674,7 @@ function HomeScreen({ session, setSession }) {
                               }}
                               style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: isActive ? '#1A6BFF' : '#F2F4F6' }}
                             >
-                              <Text style={{ fontFamily: 'Montserrat_700Bold', color: isActive ? '#1A6BFF' : '#424655', fontSize: 11 }}>${val}</Text>
+                              <Text style={{ fontFamily: 'Inter_500Medium', color: isActive ? '#1A6BFF' : '#424655', fontSize: 11 }}>${val}</Text>
                             </TouchableOpacity>
                           );
                         })}
@@ -1691,9 +1691,9 @@ function HomeScreen({ session, setSession }) {
                 <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#F8F9FB', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
                   <Feather name="dollar-sign" size={20} color="#22C55E" />
                 </View>
-                <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 15 }}>Rango de presupuesto</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 15 }}>Rango de presupuesto</Text>
               </View>
-              <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#8B8FA8', fontSize: 13, marginBottom: 20, marginLeft: 48 }}>Desliza o usa los montos sugeridos</Text>
+              <Text style={{ fontFamily: 'Inter_500Medium', color: '#8B8FA8', fontSize: 13, marginBottom: 20, marginLeft: 48 }}>Desliza o usa los montos sugeridos</Text>
               
               {/* SLIDER 2.0 (IMPROVED ACCESS) */}
               <View 
@@ -1728,22 +1728,22 @@ function HomeScreen({ session, setSession }) {
                     onPress={() => { const [mi, ma] = range.split('-'); setPriceMin(mi); setPriceMax(ma); }} 
                     style={{ paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: '#F8F9FB', borderWidth: 1, borderColor: '#F2F4F6' }}
                   >
-                    <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', fontSize: 11 }}>${range}</Text>
+                    <Text style={{ fontFamily: 'Inter_500Medium', color: '#1A6BFF', fontSize: 11 }}>${range}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
 
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <View style={{ flex: 1, backgroundColor: '#F8F9FB', borderRadius: 16, padding: 12, borderWidth: 1, borderColor: '#F2F4F6' }}>
-                  <Text style={{ color: '#8B8FA8', fontSize: 10, fontFamily: 'Montserrat_700Bold' }}>MÍNIMO ($)</Text>
-                  <TextInput value={priceMin} onChangeText={setPriceMin} keyboardType="numeric" style={{ fontSize: 18, fontFamily: 'Montserrat_900Black', color: '#191C1E', marginTop: 4 }} />
+                  <Text style={{ color: '#8B8FA8', fontSize: 10, fontFamily: 'Inter_500Medium' }}>MÍNIMO ($)</Text>
+                  <TextInput value={priceMin} onChangeText={setPriceMin} keyboardType="numeric" style={{ fontSize: 18, fontFamily: 'Inter_500Medium', color: '#191C1E', marginTop: 4 }} />
                 </View>
                 <View style={{ width: 20, alignItems: 'center' }}>
                   <Text style={{ color: '#F2F4F6', fontSize: 24 }}>-</Text>
                 </View>
                 <View style={{ flex: 1, backgroundColor: '#F8F9FB', borderRadius: 16, padding: 12, borderWidth: 1, borderColor: '#F2F4F6' }}>
-                  <Text style={{ color: '#8B8FA8', fontSize: 10, fontFamily: 'Montserrat_700Bold' }}>MÁXIMO ($)</Text>
-                  <TextInput value={priceMax} onChangeText={setPriceMax} keyboardType="numeric" style={{ fontSize: 18, fontFamily: 'Montserrat_900Black', color: '#191C1E', marginTop: 4 }} />
+                  <Text style={{ color: '#8B8FA8', fontSize: 10, fontFamily: 'Inter_500Medium' }}>MÁXIMO ($)</Text>
+                  <TextInput value={priceMax} onChangeText={setPriceMax} keyboardType="numeric" style={{ fontSize: 18, fontFamily: 'Inter_500Medium', color: '#191C1E', marginTop: 4 }} />
                 </View>
               </View>
             </View>
@@ -1754,7 +1754,7 @@ function HomeScreen({ session, setSession }) {
                 <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#F8F9FB', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
                   <Feather name="edit-3" size={18} color="#1A6BFF" />
                 </View>
-                <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 15 }}>Requerimientos</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 15 }}>Requerimientos</Text>
               </View>
               <View style={{ backgroundColor: '#F8F9FB', borderRadius: 16, height: 120, padding: 12, borderWidth: 1, borderColor: '#F2F4F6', marginBottom: 20 }}>
                 <TextInput 
@@ -1763,7 +1763,7 @@ function HomeScreen({ session, setSession }) {
                   multiline 
                   placeholder="Ej: Necesito que traigan su propia escalera..." 
                   placeholderTextColor="#8B8FA8" 
-                  style={{ flex: 1, color: '#191C1E', fontFamily: 'Montserrat_400Regular', fontSize: 14, textAlignVertical: 'top' }} 
+                  style={{ flex: 1, color: '#191C1E', fontFamily: 'Inter_500Medium', fontSize: 14, textAlignVertical: 'top' }} 
                 />
               </View>
 
@@ -1798,7 +1798,7 @@ function HomeScreen({ session, setSession }) {
                 marginTop: 10, marginBottom: 40
               }}
             >
-              <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFFFFF', fontSize: 18, textTransform: 'uppercase', letterSpacing: 1 }}>
+              <Text style={{ fontFamily: 'Inter_500Medium', color: '#FFFFFF', fontSize: 18, textTransform: 'uppercase', letterSpacing: 1 }}>
                 {isLocating ? 'PUBLICANDO...' : 'Publicar Tarea'}
               </Text>
             </TouchableOpacity>
@@ -1811,7 +1811,7 @@ function HomeScreen({ session, setSession }) {
                 <TouchableOpacity onPress={() => setShowMapModal(false)} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#F2F4F6' }}>
                   <Feather name="arrow-left" size={20} color="#191C1E" />
                 </TouchableOpacity>
-                <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 18, marginLeft: 15 }}>Fija tu ubicación exacta</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 18, marginLeft: 15 }}>Fija tu ubicación exacta</Text>
               </View>
 
               <View style={{ flex: 1 }}>
@@ -1833,7 +1833,7 @@ function HomeScreen({ session, setSession }) {
                 {/* FIXED CENTER PIN (UBER STYLE) */}
                 <View style={{ position: 'absolute', top: '50%', left: '50%', marginLeft: -24, marginTop: -48, pointerEvents: 'none', alignItems: 'center' }}>
                   <View style={{ backgroundColor: '#1A6BFF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginBottom: 5, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 5 }}>
-                    <Text style={{ color: '#FFFFFF', fontFamily: 'Montserrat_700Bold', fontSize: 12 }}>Estoy aquí</Text>
+                    <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_500Medium', fontSize: 12 }}>Estoy aquí</Text>
                   </View>
                   <View style={{ width: 4, height: 20, backgroundColor: '#1A6BFF', marginBottom: -5 }} />
                   <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#F8F9FB', borderWidth: 3, borderColor: '#1A6BFF' }} />
@@ -1841,7 +1841,7 @@ function HomeScreen({ session, setSession }) {
 
                 {/* BOTTOM CONFIRM BOX */}
                 <View style={{ position: 'absolute', bottom: 0, width: '100%', backgroundColor: '#FFFFFF', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 30, shadowColor: '#000', shadowOpacity: 1, shadowRadius: 20, elevation: 20 }}>
-                  <Text style={{ color: '#424655', fontFamily: 'Montserrat_700Bold', fontSize: 13, marginBottom: 15, textAlign: 'center' }}>Mueve el mapa para afinar la ubicación exacta del servicio.</Text>
+                  <Text style={{ color: '#424655', fontFamily: 'Inter_500Medium', fontSize: 13, marginBottom: 15, textAlign: 'center' }}>Mueve el mapa para afinar la ubicación exacta del servicio.</Text>
                   <TouchableOpacity 
                     onPress={async () => {
                       try {
@@ -1866,7 +1866,7 @@ function HomeScreen({ session, setSession }) {
                     }}
                     style={{ backgroundColor: '#1A6BFF', padding: 18, borderRadius: 16, alignItems: 'center', shadowColor: '#1A6BFF', shadowOpacity: 0.4, shadowRadius: 10 }}
                   >
-                    <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFFFFF', fontSize: 16, textTransform: 'uppercase', letterSpacing: 1 }}>CONFIRMAR UBICACIÓN</Text>
+                    <Text style={{ fontFamily: 'Inter_500Medium', color: '#FFFFFF', fontSize: 16, textTransform: 'uppercase', letterSpacing: 1 }}>CONFIRMAR UBICACIÓN</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1903,7 +1903,7 @@ function HomeScreen({ session, setSession }) {
               <TextInput 
                 placeholder="Busca un servicio..." 
                 placeholderTextcolor="#424655" 
-                style={{ color: '#191C1E', fontFamily: 'Montserrat_400Regular', marginLeft: 10, flex: 1, fontSize: 13 }} 
+                style={{ color: '#191C1E', fontFamily: 'Inter_500Medium', marginLeft: 10, flex: 1, fontSize: 13 }} 
                 onSubmitEditing={(e) => handleSmartSearch(e.nativeEvent.text)}
                 returnKeyType="search"
               />
@@ -1935,7 +1935,7 @@ function HomeScreen({ session, setSession }) {
                       <MaterialCommunityIcons name={cat.iconName} size={26} color={isActive ? '#1A6BFF' : '#8B8FA8'} />
                     </View>
                     <Text style={{ 
-                      fontFamily: isActive ? 'Montserrat_700Bold' : 'Montserrat_400Regular', 
+                      fontFamily: isActive ? 'Inter_500Medium' : 'Inter_500Medium', 
                       color: isActive ? '#191C1E' : '#8B8FA8', 
                       fontSize: 11 
                     }}>{cat.label}</Text>
@@ -1949,8 +1949,8 @@ function HomeScreen({ session, setSession }) {
           <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
             {/* SUB-CATEGORIES CHIPS CLOUD */}
             <View style={{ paddingBottom: 20 }}>
-               <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 18, marginBottom: 8 }}>{selectedCategory.label}</Text>
-               <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 13, marginBottom: 20 }}>Selecciona los servicios que requiere tu proyecto</Text>
+               <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 18, marginBottom: 8 }}>{selectedCategory.label}</Text>
+               <Text style={{ fontFamily: 'Inter_500Medium', color: '#424655', fontSize: 13, marginBottom: 20 }}>Selecciona los servicios que requiere tu proyecto</Text>
                
                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
                  {selectedCategory.subs.map((sub, idx) => {
@@ -1977,7 +1977,7 @@ function HomeScreen({ session, setSession }) {
                      >
                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                          <Text style={{ 
-                           fontFamily: 'Montserrat_700Bold', 
+                           fontFamily: 'Inter_500Medium', 
                            color: isSelected ? '#FFFFFF' : '#424655', 
                            fontSize: 13 
                          }}>{sub.name}</Text>
@@ -1993,7 +1993,7 @@ function HomeScreen({ session, setSession }) {
           {isSearching && (
             <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(255,255,255,0.8)', alignItems: 'center', justifyContent: 'center', zIndex: 100, borderRadius: 20 }}>
               <ActivityIndicator size="large" color="#1A6BFF" />
-              <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', marginTop: 15 }}>La IA de ServiTask está analizando...</Text>
+              <Text style={{ fontFamily: 'Inter_500Medium', color: '#1A6BFF', marginTop: 15 }}>La IA de ServiTask está analizando...</Text>
             </View>
           )}
 
@@ -2001,9 +2001,9 @@ function HomeScreen({ session, setSession }) {
           {selectedSubs.length > 0 && (
             <View style={{ position: 'absolute', bottom: 30, left: 24, right: 24 }}>
               <TouchableOpacity onPress={() => transitionToStep('form')} style={{ backgroundColor: '#1A6BFF', padding: 18, borderRadius: 16, alignItems: 'center', shadowColor: '#1A6BFF', shadowOpacity: 0.4, shadowRadius: 15, elevation: 8, flexDirection: 'row', justifyContent: 'center' }}>
-                <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFFFFF', fontSize: 16, textTransform: 'uppercase', letterSpacing: 1, marginRight: 10 }}>Continuar</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: '#FFFFFF', fontSize: 16, textTransform: 'uppercase', letterSpacing: 1, marginRight: 10 }}>Continuar</Text>
                 <View style={{ backgroundColor: '#FFFFFF', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 2 }}>
-                  <Text style={{ color: '#1A6BFF', fontFamily: 'Montserrat_900Black', fontSize: 14 }}>{selectedSubs.length}</Text>
+                  <Text style={{ color: '#1A6BFF', fontFamily: 'Inter_500Medium', fontSize: 14 }}>{selectedSubs.length}</Text>
                 </View>
               </TouchableOpacity>
             </View>
@@ -2023,9 +2023,9 @@ function HomeScreen({ session, setSession }) {
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <View>
               <TouchableOpacity onPress={() => setShowLocationMenu(true)} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 13 }}>📍 {location} ▾</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: '#424655', fontSize: 13 }}>📍 {location} ▾</Text>
               </TouchableOpacity>
-              <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 24, letterSpacing: -0.5 }}>Hola, {userName} 👋</Text>
+              <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 24, letterSpacing: -0.5 }}>Hola, {userName} 👋</Text>
             </View>
             <TouchableOpacity onPress={handleSignOut} style={{ width: 45, height: 45, backgroundColor: '#F2F4F6', borderRadius: 25, alignItems: 'center', justifyContent: 'center' }}>
               <Feather name="log-out" size={20} color="#FF5C3A" />
@@ -2035,24 +2035,24 @@ function HomeScreen({ session, setSession }) {
           {/* SEARCH TRIGGER */}
           <TouchableOpacity onPress={() => transitionToStep('search')} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F2F4F6', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, borderWidth: 1, borderColor: 'rgba(0,0,0,0.07)' }}>
             <Feather name="search" size={20} color="#424655" style={{ marginRight: 10 }} />
-            <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 15 }}>¿Qué servicio necesitas?</Text>
+            <Text style={{ fontFamily: 'Inter_500Medium', color: '#424655', fontSize: 15 }}>¿Qué servicio necesitas?</Text>
           </TouchableOpacity>
         </View>
 
         {/* PROMO BANNER */}
         <View style={{ marginHorizontal: 24, marginTop: 20, marginBottom: 20, backgroundColor: '#1A6BFF', borderRadius: 20, padding: 20, overflow: 'hidden' }}>
           <View style={{ backgroundColor: 'rgba(255,255,255,0.25)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, alignSelf: 'flex-start', marginBottom: 10 }}>
-            <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#FFF', fontSize: 11 }}>🔥 Oferta del día</Text>
+            <Text style={{ fontFamily: 'Inter_500Medium', color: '#FFF', fontSize: 11 }}>🔥 Oferta del día</Text>
           </View>
-          <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#FFF', fontSize: 18, marginBottom: 4 }}>Primer servicio 20% OFF</Text>
-          <Text style={{ fontFamily: 'Montserrat_400Regular', color: 'rgba(255,255,255,0.85)', fontSize: 13 }}>Usa el código SERVI20 al contratar</Text>
+          <Text style={{ fontFamily: 'Inter_500Medium', color: '#FFF', fontSize: 18, marginBottom: 4 }}>Primer servicio 20% OFF</Text>
+          <Text style={{ fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.85)', fontSize: 13 }}>Usa el código SERVI20 al contratar</Text>
         </View>
 
         {/* CATEGORIES GRID */}
         <View style={{ paddingHorizontal: 24, marginBottom: 15 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
-            <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 18 }}>Categorías</Text>
-            <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', fontSize: 13 }}>Ver todas</Text>
+            <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 18 }}>Categorías</Text>
+            <Text style={{ fontFamily: 'Inter_500Medium', color: '#1A6BFF', fontSize: 13 }}>Ver todas</Text>
           </View>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
             {CATEGORIES.map((cat, index) => (
@@ -2069,7 +2069,7 @@ function HomeScreen({ session, setSession }) {
                 <View style={{ width: 56, height: 56, borderRadius: 18, backgroundColor: cat.color + '22', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
                   <MaterialCommunityIcons name={cat.iconName} size={30} color={cat.color} />
                 </View>
-                <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#424655', fontSize: 10, textAlign: 'center', letterSpacing: 0.2 }}>{cat.label}</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: '#424655', fontSize: 10, textAlign: 'center', letterSpacing: 0.2 }}>{cat.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -2091,25 +2091,25 @@ function HomeScreen({ session, setSession }) {
                 <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(34, 197, 94, 0.15)', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
                   <Feather name="shield" size={16} color="#22C55E" />
                 </View>
-                <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 18, letterSpacing: -0.5 }}>Taskers Verificados</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 18, letterSpacing: -0.5 }}>Taskers Verificados</Text>
               </View>
               
-              <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 13, lineHeight: 20, marginBottom: 15 }}>
+              <Text style={{ fontFamily: 'Inter_500Medium', color: '#424655', fontSize: 13, lineHeight: 20, marginBottom: 15 }}>
                 Cada Tasker en ServiTask ha pasado por un riguroso proceso de verificación de identidad para garantizar la seguridad de tu hogar.
               </Text>
               
               <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15, marginBottom: 5 }}>
                   <Feather name="check" size={14} color="#1A6BFF" style={{ marginRight: 6 }} />
-                  <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 12 }}>Identidad verificada</Text>
+                  <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 12 }}>Identidad verificada</Text>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15, marginBottom: 5 }}>
                   <Feather name="check" size={14} color="#1A6BFF" style={{ marginRight: 6 }} />
-                  <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 12 }}>Garantía 100%</Text>
+                  <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 12 }}>Garantía 100%</Text>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
                   <Feather name="check" size={14} color="#1A6BFF" style={{ marginRight: 6 }} />
-                  <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 12 }}>Reseñas reales</Text>
+                  <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 12 }}>Reseñas reales</Text>
                 </View>
               </View>
             </View>
@@ -2120,9 +2120,9 @@ function HomeScreen({ session, setSession }) {
         {/* POPULAR PROJECTS: 6 SLOTS FOR FUTURE DATA */}
         <View style={{ paddingHorizontal: 24, paddingBottom: 50 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
-            <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 18 }}>Proyectos populares</Text>
+            <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 18 }}>Proyectos populares</Text>
             <View style={{ backgroundColor: 'rgba(26,107,255,0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 }}>
-              <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', fontSize: 10 }}>PRÓXIMAMENTE</Text>
+              <Text style={{ fontFamily: 'Inter_500Medium', color: '#1A6BFF', fontSize: 10 }}>PRÓXIMAMENTE</Text>
             </View>
           </View>
           
@@ -2144,15 +2144,15 @@ function HomeScreen({ session, setSession }) {
       <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingVertical: 15, backgroundColor: '#F8F9FB', borderTopWidth: 1, borderTopColor: '#F2F4F6' }}>
         <TouchableOpacity onPress={() => { setSelectedCategory(null); setSelectedSubs([]); resetFormState(); transitionToStep('category'); }} style={{ alignItems: 'center' }}>
           <Feather name="home" size={24} color="#1A6BFF" />
-          <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', fontSize: 10, marginTop: 4 }}>Inicio</Text>
+          <Text style={{ fontFamily: 'Inter_500Medium', color: '#1A6BFF', fontSize: 10, marginTop: 4 }}>Inicio</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => transitionToStep('orders')} style={{ alignItems: 'center' }}>
           <Feather name="clipboard" size={24} color="#424655" />
-          <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 10, marginTop: 4 }}>Pedidos</Text>
+          <Text style={{ fontFamily: 'Inter_500Medium', color: '#424655', fontSize: 10, marginTop: 4 }}>Pedidos</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => transitionToStep('profile')} style={{ alignItems: 'center' }}>
           <Feather name="user" size={24} color="#424655" />
-          <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 10, marginTop: 4 }}>Perfil</Text>
+          <Text style={{ fontFamily: 'Inter_500Medium', color: '#424655', fontSize: 10, marginTop: 4 }}>Perfil</Text>
         </TouchableOpacity>
       </View>
 
@@ -2165,7 +2165,7 @@ function HomeScreen({ session, setSession }) {
             {/* Drag Handle */}
             <View style={{ width: 45, height: 5, backgroundColor: 'rgba(0,0,0,0.08)', borderRadius: 3, alignSelf: 'center', marginBottom: 25 }} />
             
-            <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 20, marginBottom: 20 }}>Tus direcciones</Text>
+            <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 20, marginBottom: 20 }}>Tus direcciones</Text>
             
             <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} style={{ maxHeight: 350 }}>
               {savedLocations.map(loc => {
@@ -2188,8 +2188,8 @@ function HomeScreen({ session, setSession }) {
                       <Feather name={loc.icon} size={20} color={loc.isCurrent ? "#1A6BFF" : "#8B8FA8"} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 15, marginBottom: 3 }}>{loc.name}</Text>
-                      <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 12 }}>{loc.address}</Text>
+                      <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 15, marginBottom: 3 }}>{loc.name}</Text>
+                      <Text style={{ fontFamily: 'Inter_500Medium', color: '#424655', fontSize: 12 }}>{loc.address}</Text>
                     </View>
                     {isSelected && (
                       <Feather name="check-circle" size={20} color="#1A6BFF" />
@@ -2209,7 +2209,7 @@ function HomeScreen({ session, setSession }) {
                 <View style={{ width: 45, height: 45, borderRadius: 23, backgroundColor: 'rgba(26, 107, 255, 0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 15, borderWidth: 1, borderColor: 'rgba(26, 107, 255, 0.3)' }}>
                   <Feather name="plus" size={20} color="#1A6BFF" />
                 </View>
-                <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', fontSize: 15 }}>Agregar una nueva ubicación</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: '#1A6BFF', fontSize: 15 }}>Agregar una nueva ubicación</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -2223,7 +2223,7 @@ function HomeScreen({ session, setSession }) {
             <TouchableOpacity onPress={() => setShowMapModal(false)} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#F2F4F6' }}>
               <Feather name="arrow-left" size={20} color="#191C1E" />
             </TouchableOpacity>
-            <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 18, marginLeft: 15 }}>Fija tu ubicación exacta</Text>
+            <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 18, marginLeft: 15 }}>Fija tu ubicación exacta</Text>
           </View>
 
           <View style={{ flex: 1 }}>
@@ -2244,14 +2244,14 @@ function HomeScreen({ session, setSession }) {
             
             <View style={{ position: 'absolute', top: '50%', left: '50%', marginLeft: -24, marginTop: -48, pointerEvents: 'none', alignItems: 'center' }}>
               <View style={{ backgroundColor: '#1A6BFF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginBottom: 5, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 5 }}>
-                <Text style={{ color: '#FFFFFF', fontFamily: 'Montserrat_700Bold', fontSize: 12 }}>Estoy aquí</Text>
+                <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_500Medium', fontSize: 12 }}>Estoy aquí</Text>
               </View>
               <View style={{ width: 4, height: 20, backgroundColor: '#1A6BFF', marginBottom: -5 }} />
               <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#F8F9FB', borderWidth: 3, borderColor: '#1A6BFF' }} />
             </View>
 
             <View style={{ position: 'absolute', bottom: 0, width: '100%', backgroundColor: '#FFFFFF', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 30, shadowColor: '#000', shadowOpacity: 1, shadowRadius: 20, elevation: 20 }}>
-              <Text style={{ color: '#424655', fontFamily: 'Montserrat_700Bold', fontSize: 13, marginBottom: 15, textAlign: 'center' }}>Mueve el mapa para afinar la ubicación exacta del servicio.</Text>
+              <Text style={{ color: '#424655', fontFamily: 'Inter_500Medium', fontSize: 13, marginBottom: 15, textAlign: 'center' }}>Mueve el mapa para afinar la ubicación exacta del servicio.</Text>
               <TouchableOpacity 
                 onPress={async () => {
                   try {
@@ -2276,7 +2276,7 @@ function HomeScreen({ session, setSession }) {
                 }}
                 style={{ backgroundColor: '#1A6BFF', padding: 18, borderRadius: 16, alignItems: 'center', shadowColor: '#1A6BFF', shadowOpacity: 0.4, shadowRadius: 10 }}
               >
-                <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFFFFF', fontSize: 16, textTransform: 'uppercase', letterSpacing: 1 }}>CONFIRMAR UBICACIÓN</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: '#FFFFFF', fontSize: 16, textTransform: 'uppercase', letterSpacing: 1 }}>CONFIRMAR UBICACIÓN</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -2294,46 +2294,46 @@ function HomeScreen({ session, setSession }) {
                 <TouchableOpacity onPress={() => setShowLocationDetailForm(false)} style={{ marginRight: 15 }}>
                   <Feather name="arrow-left" size={24} color="#1E293B" />
                 </TouchableOpacity>
-                <Text style={{ fontFamily: 'Montserrat_900Black', color: '#1E293B', fontSize: 18 }}>Casi listo... Danos el detalle</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: '#1E293B', fontSize: 18 }}>Casi listo... Danos el detalle</Text>
               </View>
 
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
                 <View style={{ backgroundColor: '#F8FAFC', padding: 15, borderRadius: 16, marginBottom: 20, borderWidth: 1, borderColor: '#F1F5F9' }}>
-                   <Text style={{ fontSize: 10, fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', textTransform: 'uppercase', marginBottom: 4 }}>Punto en el mapa</Text>
-                   <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#1E293B', fontSize: 13 }}>{locTempBase}</Text>
+                   <Text style={{ fontSize: 10, fontFamily: 'Inter_500Medium', color: '#1A6BFF', textTransform: 'uppercase', marginBottom: 4 }}>Punto en el mapa</Text>
+                   <Text style={{ fontFamily: 'Inter_500Medium', color: '#1E293B', fontSize: 13 }}>{locTempBase}</Text>
                 </View>
 
                 {/* FIELDS GRID */}
                 <View style={{ flexDirection: 'row', gap: 12, marginBottom: 15 }}>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 11, fontFamily: 'Montserrat_700Bold', color: '#475569', marginBottom: 6 }}>Manzana *</Text>
-                    <TextInput value={locMz} onChangeText={setLocMz} placeholder="Mz. 40" style={{ backgroundColor: '#F8FAFC', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', fontFamily: 'Montserrat_400Regular', fontSize: 14 }} />
+                    <Text style={{ fontSize: 11, fontFamily: 'Inter_500Medium', color: '#475569', marginBottom: 6 }}>Manzana *</Text>
+                    <TextInput value={locMz} onChangeText={setLocMz} placeholder="Mz. 40" style={{ backgroundColor: '#F8FAFC', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', fontFamily: 'Inter_500Medium', fontSize: 14 }} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 11, fontFamily: 'Montserrat_700Bold', color: '#475569', marginBottom: 6 }}>Villa / Casa *</Text>
-                    <TextInput value={locVilla} onChangeText={setLocVilla} placeholder="Villa 12" style={{ backgroundColor: '#F8FAFC', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', fontFamily: 'Montserrat_400Regular', fontSize: 14 }} />
+                    <Text style={{ fontSize: 11, fontFamily: 'Inter_500Medium', color: '#475569', marginBottom: 6 }}>Villa / Casa *</Text>
+                    <TextInput value={locVilla} onChangeText={setLocVilla} placeholder="Villa 12" style={{ backgroundColor: '#F8FAFC', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', fontFamily: 'Inter_500Medium', fontSize: 14 }} />
                   </View>
                 </View>
 
                 <View style={{ flexDirection: 'row', gap: 12, marginBottom: 15 }}>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 11, fontFamily: 'Montserrat_700Bold', color: '#475569', marginBottom: 6 }}>Solar *</Text>
-                    <TextInput value={locSolar} onChangeText={setLocSolar} placeholder="Solar 5" style={{ backgroundColor: '#F8FAFC', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', fontFamily: 'Montserrat_400Regular', fontSize: 14 }} />
+                    <Text style={{ fontSize: 11, fontFamily: 'Inter_500Medium', color: '#475569', marginBottom: 6 }}>Solar *</Text>
+                    <TextInput value={locSolar} onChangeText={setLocSolar} placeholder="Solar 5" style={{ backgroundColor: '#F8FAFC', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', fontFamily: 'Inter_500Medium', fontSize: 14 }} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 11, fontFamily: 'Montserrat_400Regular', color: '#64748B', marginBottom: 6 }}>Piso / Depto (Opcional)</Text>
-                    <TextInput value={locDepto} onChangeText={setLocDepto} placeholder="Apt 2B" style={{ backgroundColor: '#F8FAFC', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', fontFamily: 'Montserrat_400Regular', fontSize: 14 }} />
+                    <Text style={{ fontSize: 11, fontFamily: 'Inter_500Medium', color: '#64748B', marginBottom: 6 }}>Piso / Depto (Opcional)</Text>
+                    <TextInput value={locDepto} onChangeText={setLocDepto} placeholder="Apt 2B" style={{ backgroundColor: '#F8FAFC', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', fontFamily: 'Inter_500Medium', fontSize: 14 }} />
                   </View>
                 </View>
 
                 <View style={{ marginBottom: 15 }}>
-                  <Text style={{ fontSize: 11, fontFamily: 'Montserrat_700Bold', color: '#475569', marginBottom: 6 }}>Referencias adicionales de llegada *</Text>
-                  <TextInput value={locRef} onChangeText={setLocRef} placeholder="A lado de la farmacia azul..." style={{ backgroundColor: '#F8FAFC', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', fontFamily: 'Montserrat_400Regular', fontSize: 14 }} />
+                  <Text style={{ fontSize: 11, fontFamily: 'Inter_500Medium', color: '#475569', marginBottom: 6 }}>Referencias adicionales de llegada *</Text>
+                  <TextInput value={locRef} onChangeText={setLocRef} placeholder="A lado de la farmacia azul..." style={{ backgroundColor: '#F8FAFC', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', fontFamily: 'Inter_500Medium', fontSize: 14 }} />
                 </View>
 
                 <View style={{ marginBottom: 25 }}>
-                  <Text style={{ fontSize: 11, fontFamily: 'Montserrat_700Bold', color: '#475569', marginBottom: 6 }}>Nombre de la dirección (Alias) *</Text>
-                  <TextInput value={locAlias} onChangeText={setLocAlias} placeholder="Casa Playa, Casa Mamá..." style={{ backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, borderWidth: 2, borderColor: '#1A6BFF22', fontFamily: 'Montserrat_700Bold', fontSize: 14, color: '#1A6BFF' }} />
+                  <Text style={{ fontSize: 11, fontFamily: 'Inter_500Medium', color: '#475569', marginBottom: 6 }}>Nombre de la dirección (Alias) *</Text>
+                  <TextInput value={locAlias} onChangeText={setLocAlias} placeholder="Casa Playa, Casa Mamá..." style={{ backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, borderWidth: 2, borderColor: '#1A6BFF22', fontFamily: 'Inter_500Medium', fontSize: 14, color: '#1A6BFF' }} />
                 </View>
 
                 <TouchableOpacity 
@@ -2366,7 +2366,7 @@ function HomeScreen({ session, setSession }) {
                    }}
                    style={{ backgroundColor: '#1A6BFF', padding: 18, borderRadius: 16, alignItems: 'center', shadowColor: '#1A6BFF', shadowOpacity: 0.4, shadowRadius: 10, elevation: 8 }}
                 >
-                  <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFFFFF', fontSize: 16, textTransform: 'uppercase', letterSpacing: 1 }}>GUARDAR DIRECCIÓN</Text>
+                  <Text style={{ fontFamily: 'Inter_500Medium', color: '#FFFFFF', fontSize: 16, textTransform: 'uppercase', letterSpacing: 1 }}>GUARDAR DIRECCIÓN</Text>
                 </TouchableOpacity>
               </ScrollView>
             </View>
@@ -2471,7 +2471,7 @@ function AuthScreen({ setSession }) {
   const Requirement = ({ met, text }) => (
     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
       <Feather name={met ? "check-circle" : "circle"} size={14} color={met ? "#22C55E" : "#8B8FA8"} />
-      <Text style={{ color: met ? '#22C55E' : '#8B8FA8', marginLeft: 8, fontSize: 13, fontFamily: 'Montserrat_400Regular' }}>{text}</Text>
+      <Text style={{ color: met ? '#22C55E' : '#8B8FA8', marginLeft: 8, fontSize: 13, fontFamily: 'Inter_500Medium' }}>{text}</Text>
     </View>
   );
 
@@ -2533,8 +2533,8 @@ function AuthScreen({ setSession }) {
           <Feather name="camera" size={14} color={step >= 3 ? "#FFF" : "#8B8FA8"} />
         </View>
       </View>
-      <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 18, marginBottom: 4 }}>{title}</Text>
-      {subtitle && <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 13, textAlign: 'center' }}>{subtitle}</Text>}
+      <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 18, marginBottom: 4 }}>{title}</Text>
+      {subtitle && <Text style={{ fontFamily: 'Inter_500Medium', color: '#424655', fontSize: 13, textAlign: 'center' }}>{subtitle}</Text>}
     </View>
   );
 
@@ -2741,7 +2741,7 @@ function AuthScreen({ setSession }) {
             {mode === 'welcome' && (
               <View style={styles.bottomSheet}>
                 <Text style={[styles.bottomSheetTitle, { marginBottom: 6 }]}>Elige cómo quieres ingresar</Text>
-                <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', fontSize: 14, textAlign: 'center', marginBottom: 28 }}>Accede a tu cuenta para continuar</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: '#424655', fontSize: 14, textAlign: 'center', marginBottom: 28 }}>Accede a tu cuenta para continuar</Text>
 
                 <TouchableOpacity style={[styles.socialButton, {backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: {width:0, height:4}, shadowOpacity: 0.10, shadowRadius: 10, elevation: 4}]} onPress={handleGoogleLogin}>
                   <View style={styles.socialIconWrapper}><Ionicons name="logo-google" size={20} color="#000" /></View>
@@ -2765,7 +2765,7 @@ function AuthScreen({ setSession }) {
                 <TextInput style={[styles.input, { color: '#191C1E' }]} placeholder="correo@ejemplo.com" placeholderTextcolor="#424655" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
                 <Text style={styles.label}>Contraseña</Text>
                 <TextInput style={[styles.input, { color: '#191C1E' }]} placeholder="••••••••" placeholderTextcolor="#424655" secureTextEntry value={password} onChangeText={setPassword} />
-                <TouchableOpacity style={{ alignItems: 'flex-end', marginBottom: 25 }} onPress={() => setMode('forgot_password')}><Text style={{ fontFamily: 'Montserrat_700Bold', color: '#1A6BFF', fontSize: 13 }}>¿Olvidaste tu clave?</Text></TouchableOpacity>
+                <TouchableOpacity style={{ alignItems: 'flex-end', marginBottom: 25 }} onPress={() => setMode('forgot_password')}><Text style={{ fontFamily: 'Inter_500Medium', color: '#1A6BFF', fontSize: 13 }}>¿Olvidaste tu clave?</Text></TouchableOpacity>
                 <TouchableOpacity style={styles.primaryButton} onPress={handleLogin}><Text style={styles.primaryButtonText}>Entrar</Text></TouchableOpacity>
                 <TouchableOpacity style={[styles.primaryButton, { backgroundColor: 'transparent', borderWidth: 1, borderColor: 'rgba(0,0,0,0.07)' }]} onPress={() => setMode('register_step1')}><Text style={[styles.primaryButtonText, { color: '#424655' }]}>Registrarme</Text></TouchableOpacity>
               </View>
@@ -2778,14 +2778,14 @@ function AuthScreen({ setSession }) {
                 <TextInput style={[styles.input, { color: '#191C1E' }]} placeholder="Ej. Daniel Alarcón" placeholderTextcolor="#424655" value={name} onChangeText={setName} />
                 <Text style={styles.label}>Fecha de Nacimiento</Text>
                 <TouchableOpacity style={styles.datePickerButton} onPress={() => setShowDatePicker(true)}>
-                    <Text style={{ fontFamily: 'Montserrat_400Regular', color: dateIsSet ? '#191C1E' : '#9EA3B0', fontSize: 15 }}>
+                    <Text style={{ fontFamily: 'Inter_500Medium', color: dateIsSet ? '#191C1E' : '#9EA3B0', fontSize: 15 }}>
                      {dateIsSet ? formatDate(birthDate) : "Toca para abrir calendario 📅"}
                   </Text>
                 </TouchableOpacity>
                 {showDatePicker && <DateTimePicker value={birthDate} mode="date" display="spinner" maximumDate={new Date()} onChange={onDateChange} textColor="#191C1E" themeVariant="light" />}
                 {Platform.OS === 'ios' && showDatePicker && (
                   <TouchableOpacity style={{backgroundColor: '#1A6BFF', padding: 10, borderRadius: 8, alignItems:'center', marginBottom:20}} onPress={() => setShowDatePicker(false)}>
-                    <Text style={{fontFamily: 'Montserrat_700Bold', color:'#FFF'}}>Confirmar Fecha</Text>
+                    <Text style={{fontFamily: 'Inter_500Medium', color:'#FFF'}}>Confirmar Fecha</Text>
                   </TouchableOpacity>
                 )}
                 <Text style={styles.label}>Correo electrónico</Text>
@@ -2793,7 +2793,7 @@ function AuthScreen({ setSession }) {
                 <Text style={styles.label}>Crea tu Contraseña</Text>
                 <TextInput style={[styles.input, { color: '#191C1E', marginBottom: 10 }]} placeholder="••••••••" placeholderTextcolor="#424655" secureTextEntry value={password} onChangeText={setPassword} />
                 <View style={{ marginBottom: 20, backgroundColor: 'rgba(0,0,0,0.03)', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#F2F4F6' }}>
-                  <Text style={{ color: '#191C1E', fontFamily: 'Montserrat_700Bold', marginBottom: 10, fontSize: 13 }}>Tu contraseña debe contener:</Text>
+                  <Text style={{ color: '#191C1E', fontFamily: 'Inter_500Medium', marginBottom: 10, fontSize: 13 }}>Tu contraseña debe contener:</Text>
                   <Requirement met={hasUpperCase} text="1 Letra mayúscula" />
                   <Requirement met={hasLowerCase} text="1 Letra minúscula" />
                   <Requirement met={hasNumber} text="1 Número" />
@@ -2815,7 +2815,7 @@ function AuthScreen({ setSession }) {
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 25 }}>
                   <TouchableOpacity onPress={() => setShowMapModal(true)} style={[styles.inputContainer, { flex: 1, paddingVertical: 18, marginBottom: 0 }]}>
                     <Feather name="map-pin" size={18} color="#424655" style={{ marginRight: 10 }} />
-                    <Text style={{ flex: 1, color: '#191C1E', fontFamily: 'Montserrat_700Bold', fontSize: 13 }} numberOfLines={1}>{authLocation}</Text>
+                    <Text style={{ flex: 1, color: '#191C1E', fontFamily: 'Inter_500Medium', fontSize: 13 }} numberOfLines={1}>{authLocation}</Text>
                     <Feather name="chevron-down" size={18} color="#424655" />
                   </TouchableOpacity>
                   <TouchableOpacity onPress={handleGetLocation} disabled={isLocating} style={{ width: 56, height: 56, backgroundColor: 'rgba(26, 107, 255, 0.15)', borderRadius: 12, marginLeft: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(26, 107, 255, 0.3)' }}>
@@ -2854,8 +2854,8 @@ function AuthScreen({ setSession }) {
                 <View style={{ backgroundColor: 'rgba(26, 107, 255, 0.1)', padding: 20, borderRadius: 100, marginBottom: 20 }}>
                   <Text style={{ fontSize: 40 }}>✉️</Text>
                 </View>
-                <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 24, marginBottom: 10 }}>Verifica tu correo</Text>
-                <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', textAlign: 'center', marginBottom: 30, fontSize: 15, lineHeight: 22 }}>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 24, marginBottom: 10 }}>Verifica tu correo</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: '#424655', textAlign: 'center', marginBottom: 30, fontSize: 15, lineHeight: 22 }}>
                   Hemos enviado un código mágico de 6 dígitos a: {"\n"}<Text style={{color: '#1A6BFF', fontWeight: 'bold'}}>{email}</Text>
                 </Text>
                 <TextInput style={[styles.input, { color: '#191C1E', fontSize: 32, textAlign: 'center', letterSpacing: 15, width: '100%', marginBottom: 30 }]} placeholder="000000" placeholderTextColor="rgba(139, 143, 168, 0.3)" keyboardType="numeric" maxLength={6} value={otpCode} onChangeText={setOtpCode} />
@@ -2875,8 +2875,8 @@ function AuthScreen({ setSession }) {
 
     {mode === 'update_password' && (
       <View>
-        <Text style={{ fontFamily: 'Montserrat_700Bold', color: '#191C1E', fontSize: 20, marginBottom: 10, textAlign: 'center' }}>Nueva Contraseña</Text>
-        <Text style={{ fontFamily: 'Montserrat_400Regular', color: '#424655', textAlign: 'center', marginBottom: 25, fontSize: 14 }}>
+        <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 20, marginBottom: 10, textAlign: 'center' }}>Nueva Contraseña</Text>
+        <Text style={{ fontFamily: 'Inter_500Medium', color: '#424655', textAlign: 'center', marginBottom: 25, fontSize: 14 }}>
           Ingresa tu nueva clave de acceso para SERVITASK
         </Text>
         
@@ -2916,7 +2916,7 @@ function AuthScreen({ setSession }) {
             <TouchableOpacity onPress={() => setShowMapModal(false)} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#F2F4F6' }}>
               <Feather name="arrow-left" size={20} color="#191C1E" />
             </TouchableOpacity>
-            <Text style={{ fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 18, marginLeft: 15 }}>Fija tu ubicación exacta</Text>
+            <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 18, marginLeft: 15 }}>Fija tu ubicación exacta</Text>
           </View>
 
           <View style={{ flex: 1 }}>
@@ -2937,14 +2937,14 @@ function AuthScreen({ setSession }) {
             
             <View style={{ position: 'absolute', top: '50%', left: '50%', marginLeft: -24, marginTop: -48, pointerEvents: 'none', alignItems: 'center' }}>
               <View style={{ backgroundColor: '#1A6BFF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginBottom: 5, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 5 }}>
-                <Text style={{ color: '#FFFFFF', fontFamily: 'Montserrat_700Bold', fontSize: 12 }}>Estoy aquí</Text>
+                <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_500Medium', fontSize: 12 }}>Estoy aquí</Text>
               </View>
               <View style={{ width: 4, height: 20, backgroundColor: '#1A6BFF', marginBottom: -5 }} />
               <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#F8F9FB', borderWidth: 3, borderColor: '#1A6BFF' }} />
             </View>
 
             <View style={{ position: 'absolute', bottom: 0, width: '100%', backgroundColor: '#FFFFFF', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 30, shadowColor: '#000', shadowOpacity: 1, shadowRadius: 20, elevation: 20 }}>
-              <Text style={{ color: '#424655', fontFamily: 'Montserrat_700Bold', fontSize: 13, marginBottom: 15, textAlign: 'center' }}>Mueve el mapa para afinar tu ubicación y conectar cerca.</Text>
+              <Text style={{ color: '#424655', fontFamily: 'Inter_500Medium', fontSize: 13, marginBottom: 15, textAlign: 'center' }}>Mueve el mapa para afinar tu ubicación y conectar cerca.</Text>
               <TouchableOpacity 
                 onPress={async () => {
                   try {
@@ -2965,7 +2965,7 @@ function AuthScreen({ setSession }) {
                 }}
                 style={{ backgroundColor: '#1A6BFF', padding: 18, borderRadius: 16, alignItems: 'center', shadowColor: '#1A6BFF', shadowOpacity: 0.4, shadowRadius: 10 }}
               >
-                <Text style={{ fontFamily: 'Montserrat_900Black', color: '#FFFFFF', fontSize: 16, textTransform: 'uppercase', letterSpacing: 1 }}>CONFIRMAR UBICACIÓN</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: '#FFFFFF', fontSize: 16, textTransform: 'uppercase', letterSpacing: 1 }}>CONFIRMAR UBICACIÓN</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -3012,7 +3012,7 @@ const ServiTaskSplashScreen = ({ onFinish }) => {
         ] 
       }}>
          <View style={{ alignItems: 'baseline', flexDirection: 'row' }}>
-            <Text style={{ fontFamily: 'Montserrat_900Black', fontSize: 52, color: '#191C1E', letterSpacing: -2 }}>SERVITASK</Text>
+            <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 52, color: '#191C1E', letterSpacing: -2 }}>SERVITASK</Text>
          </View>
       </Animated.View>
       
@@ -3030,7 +3030,7 @@ const ServiTaskSplashScreen = ({ onFinish }) => {
 // MAIN APP ROUTER (Decides Auth vs Home)
 // ══════════════════════════════════════════
 export default function App() {
-  let [fontsLoaded] = useFonts({ Montserrat_400Regular, Montserrat_700Bold, Montserrat_900Black });
+  let [fontsLoaded] = useFonts({ Inter_500Medium });
   const [session, setSession] = useState(null);
   const [sessionChecked, setSessionChecked] = useState(false);
   const [isAppReady, setIsAppReady] = useState(false);
@@ -3074,37 +3074,37 @@ const styles = StyleSheet.create({
   heroImage: { position: 'absolute', width: '100%', height: '100%', resizeMode: 'cover' },
   heroOverlay: { position: 'absolute', width: '100%', height: '100%', backgroundColor: 'rgba(13, 15, 26, 0.65)' },
   heroLogoContainer: { position: 'absolute', alignItems: 'center', bottom: -5, zIndex: 10 },
-  heroLogoText: { fontFamily: 'Montserrat_900Black', fontSize: 50, color: '#FFFFFF', letterSpacing: -1, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: {width: 0, height: 2}, textShadowRadius: 10 },
+  heroLogoText: { fontFamily: 'Inter_500Medium', fontSize: 50, color: '#FFFFFF', letterSpacing: -1, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: {width: 0, height: 2}, textShadowRadius: 10 },
   bottomSheet: { backgroundColor: '#F8F9FB', paddingHorizontal: 24, paddingTop: 36, paddingBottom: 60, borderTopLeftRadius: 40, borderTopRightRadius: 40, borderTopWidth: 1, borderTopColor: '#ECEEF2', marginTop: -35, flex: 1, minHeight: 400 },
-  bottomSheetTitle: { fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 22, marginBottom: 25, textAlign: 'center', letterSpacing: -0.5 },
+  bottomSheetTitle: { fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 22, marginBottom: 25, textAlign: 'center', letterSpacing: -0.5 },
   socialButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 30, marginBottom: 12 },
   socialIconWrapper: { position: 'absolute', left: 24 },
-  socialButtonText: { fontFamily: 'Montserrat_700Bold', fontSize: 16 },
+  socialButtonText: { fontFamily: 'Inter_500Medium', fontSize: 16 },
 
   container: { flex: 1, backgroundColor: '#F8F9FB' },
   backButton: { position: 'absolute', top: Platform.OS === 'ios' ? 60 : 40, left: 20, zIndex: 10, padding: 10, backgroundColor: '#F2F4F6', borderRadius: 8 },
-  backButtonText: { fontFamily: 'Montserrat_700Bold', color: '#424655' },
+  backButtonText: { fontFamily: 'Inter_500Medium', color: '#424655' },
   scrollContent: { flexGrow: 1, justifyContent: 'flex-start', paddingBottom: 0 },
   header: { paddingTop: 0, paddingBottom: 0, alignItems: 'center' },
   icon: { fontSize: 48, marginBottom: 10 },
-  logo: { fontFamily: 'Montserrat_900Black', fontSize: 32, color: '#191C1E', letterSpacing: -1 },
+  logo: { fontFamily: 'Inter_500Medium', fontSize: 32, color: '#191C1E', letterSpacing: -1 },
   logoHighlight: { color: '#1A6BFF' },
   formContainer: { paddingHorizontal: 24, width: '100%', maxWidth: 450, alignSelf: 'center' },
-  label: { fontFamily: 'Montserrat_700Bold', color: '#424655', fontSize: 12, marginBottom: 8, textTransform: 'uppercase' },
-  input: { fontFamily: 'Montserrat_400Regular', color: '#191C1E', backgroundColor: '#F2F4F6', borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 18, fontSize: 15 },
+  label: { fontFamily: 'Inter_500Medium', color: '#424655', fontSize: 12, marginBottom: 8, textTransform: 'uppercase' },
+  input: { fontFamily: 'Inter_500Medium', color: '#191C1E', backgroundColor: '#F2F4F6', borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 18, fontSize: 15 },
   datePickerButton: { backgroundColor: '#F2F4F6', borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 16, marginBottom: 18, justifyContent: 'center' },
   imagePicker: { width: '100%', height: 110, backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 2, borderColor: 'rgba(0,0,0,0.07)', borderStyle: 'dashed', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 20, overflow: 'hidden' },
   imagePreview: { width: '100%', height: '100%', resizeMode: 'cover' },
-  imagePickerText: { fontFamily: 'Montserrat_700Bold', color: '#1A6BFF' },
+  imagePickerText: { fontFamily: 'Inter_500Medium', color: '#1A6BFF' },
   primaryButton: { backgroundColor: '#1A6BFF', padding: 16, borderRadius: 10, alignItems: 'center', width: '100%', marginBottom: 15 },
-  primaryButtonText: { fontFamily: 'Montserrat_700Bold', color: '#FFFFFF', fontSize: 16 },
+  primaryButtonText: { fontFamily: 'Inter_500Medium', color: '#FFFFFF', fontSize: 16 },
 
   // Request Form Styles
-  formLabel: { fontFamily: 'Montserrat_900Black', color: '#191C1E', fontSize: 13, marginBottom: 15, textTransform: 'uppercase', letterSpacing: 0.5 },
+  formLabel: { fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 13, marginBottom: 15, textTransform: 'uppercase', letterSpacing: 0.5 },
   inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 25, borderWidth: 1, borderColor: '#F2F4F6' },
   choiceBtn: { width: '31%', backgroundColor: '#FFFFFF', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 5, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)' },
   choiceBtnActive: { backgroundColor: 'rgba(26, 107, 255, 0.15)', borderColor: '#1A6BFF', borderWidth: 2 },
-  choiceText: { color: '#424655', fontFamily: 'Montserrat_700Bold', fontSize: 11, textAlign: 'center' },
+  choiceText: { color: '#424655', fontFamily: 'Inter_500Medium', fontSize: 11, textAlign: 'center' },
   choiceTextActive: { color: '#191C1E' }
 });
 
