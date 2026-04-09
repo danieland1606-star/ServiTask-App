@@ -13,6 +13,58 @@ import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFonts, Inter_500Medium } from '@expo-google-fonts/inter';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { supabase } from '../../lib/supabase';
+import { Session } from '@supabase/supabase-js';
+
+// ══════════════════════════════════════════
+// TYPES & INTERFACES
+// ══════════════════════════════════════════
+
+interface Category {
+  id: string;
+  iconLib: string;
+  iconName: string;
+  color: string;
+  pastelColor: string;
+  label: string;
+  subs: { name: string }[];
+}
+
+interface Job {
+  id: string;
+  client_id: string;
+  category: string;
+  subcategory: string;
+  details: string;
+  price_min: number;
+  price_max: number;
+  location_label: string;
+  status: string;
+  scheduled_date: string | null;
+  category_color?: string;
+  category_icon?: string;
+  title?: string;
+  service?: string;
+  time?: string;
+  tasker?: string;
+}
+
+interface Proposal {
+  id: string;
+  job_id: string;
+  tasker_id: string;
+  tasker_name: string;
+  price: number;
+  status: string;
+}
+
+interface SavedLocation {
+  id: string;
+  name: string;
+  address: string;
+  icon: any;
+  isCurrent?: boolean;
+  details?: any;
+}
 
 // Configure Calendar to Spanish
 LocaleConfig.locales['es'] = {
@@ -33,20 +85,20 @@ WebBrowser.maybeCompleteAuthSession();
 // ══════════════════════════════════════════
 // HOME SCREEN (MAIN APP)
 // ══════════════════════════════════════════
-function HomeScreen({ session, setSession }) {
+function HomeScreen({ session, setSession }: { session: Session | null; setSession: (session: Session | null) => void }) {
   const [userName, setUserName] = useState('ServiTask');
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedSubs, setSelectedSubs] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [selectedSubs, setSelectedSubs] = useState<string[]>([]);
   const [step, setStep] = useState('category'); // 'category' | 'form' | 'waiting_proposals' | 'orders' | 'profile' | 'agenda'
-  const [activeJobId, setActiveJobId] = useState(null);
-  const [proposals, setProposals] = useState([]);
-  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [userRating, setUserRating] = useState('5.0'); // Base rating if no reviews
-  const [availableJobs, setAvailableJobs] = useState([]);
+  const [availableJobs, setAvailableJobs] = useState<Job[]>([]);
   const [isTaskerMode, setIsTaskerMode] = useState(true); 
   const [isOnline, setIsOnline] = useState(true);
 
-  const getInitials = (fullName) => {
+  const getInitials = (fullName: string) => {
     if (!fullName) return 'U';
     const names = fullName.trim().split(' ');
     if (names.length >= 2) return (names[0][0] + names[names.length - 1][0]).toUpperCase();
@@ -57,7 +109,7 @@ function HomeScreen({ session, setSession }) {
   const hammerRotate = React.useRef(new Animated.Value(0)).current;
   const mainFadeAnim = React.useRef(new Animated.Value(1)).current;
 
-  const transitionToStep = (newStep) => {
+  const transitionToStep = (newStep: string) => {
     // Immediate transition as requested
     Animated.timing(mainFadeAnim, {
       toValue: 0,
@@ -107,7 +159,7 @@ function HomeScreen({ session, setSession }) {
         const { data, error } = await supabase
           .from('reviews')
           .select('rating')
-          .eq('target_id', session.user.id);
+          .eq('target_id', session?.user?.id);
         
         if (data && data.length > 0) {
           const avg = data.reduce((acc, curr) => acc + curr.rating, 0) / data.length;
@@ -131,7 +183,7 @@ function HomeScreen({ session, setSession }) {
   const [showLocationMenu, setShowLocationMenu] = useState(false);
   const [mapRegion, setMapRegion] = useState({ latitude: -2.1894, longitude: -79.8890, latitudeDelta: 0.05, longitudeDelta: 0.05 });
   const [location, setLocation] = useState('Buscando...');
-  const [savedLocations, setSavedLocations] = useState([
+  const [savedLocations, setSavedLocations] = useState<SavedLocation[]>([
     { id: '1', name: 'Ubicación actual', address: 'Buscando vía GPS...', icon: 'crosshair', isCurrent: true },
     { id: '2', name: 'Casa', address: 'Mz 40, Villa 12, Norte de Guayaquil', icon: 'home' },
     { id: '3', name: 'Oficina', address: 'Edificio Roraima, Centro de Guayaquil', icon: 'briefcase' }
@@ -142,7 +194,7 @@ function HomeScreen({ session, setSession }) {
   const [priceMax, setPriceMax] = useState('50');
   const [details, setDetails] = useState('');
   const [needsMeasurements, setNeedsMeasurements] = useState('');
-  const [attachments, setAttachments] = useState([]);
+  const [attachments, setAttachments] = useState<ImagePicker.ImagePickerAsset[]>([]);
   
   // Premium Location Form Detail States
   const [showLocationDetailForm, setShowLocationDetailForm] = useState(false);
@@ -155,10 +207,8 @@ function HomeScreen({ session, setSession }) {
   const [locTempBase, setLocTempBase] = useState(''); // Geocoded address from map
   const [scheduledDate, setScheduledDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [agendaJobs, setAgendaJobs] = useState([]);
-  const [markedDates, setMarkedDates] = useState({});
 
-  const formatLocalDate = (date) => {
+  const formatLocalDate = (date: Date) => {
     const years = date.getFullYear();
     const months = String(date.getMonth() + 1).padStart(2, '0');
     const days = String(date.getDate()).padStart(2, '0');
@@ -168,7 +218,7 @@ function HomeScreen({ session, setSession }) {
   const [selectedAgendaDate, setSelectedAgendaDate] = useState(formatLocalDate(new Date()));
   
   // Custom measurements state
-  const [whatToMeasure, setWhatToMeasure] = useState([]);
+  const [whatToMeasure, setWhatToMeasure] = useState<string[]>([]);
   const [customMeasurement, setCustomMeasurement] = useState('');
   const [specificTools, setSpecificTools] = useState('');
   const [measurePriceMin, setMeasurePriceMin] = useState('5.00');
@@ -196,7 +246,7 @@ function HomeScreen({ session, setSession }) {
 
   const PROVINCES = ["Azuay", "Bolívar", "Cañar", "Carchi", "Chimborazo", "Cotopaxi", "El Oro", "Esmeraldas", "Galápagos", "Guayas", "Imbabura", "Loja", "Los Ríos", "Manabí", "Morona Santiago", "Napo", "Orellana", "Pastaza", "Pichincha", "Santa Elena", "Santo Domingo", "Sucumbíos", "Tungurahua", "Zamora Chinchipe"];
 
-  const toggleMeasurement = (item) => {
+  const toggleMeasurement = (item: string) => {
     if (whatToMeasure.includes(item)) {
       setWhatToMeasure(whatToMeasure.filter(i => i !== item));
     } else {
@@ -204,7 +254,7 @@ function HomeScreen({ session, setSession }) {
     }
   };
 
-  const handleMeasureSliderTouch = (e) => {
+  const handleMeasureSliderTouch = (e: any) => {
     if (measureSliderWidth === 0) return;
     const locX = Math.max(0, Math.min(e.nativeEvent.locationX, measureSliderWidth));
     const minLimit = 5, maxLimit = 50;
@@ -220,7 +270,7 @@ function HomeScreen({ session, setSession }) {
     }
   };
 
-  const handleSliderTouch = (e) => {
+  const handleSliderTouch = (e: any) => {
     if (sliderWidth === 0) return;
     const locX = Math.max(0, Math.min(e.nativeEvent.locationX, sliderWidth));
     const minLimit = 10, maxLimit = 300;
@@ -364,7 +414,7 @@ function HomeScreen({ session, setSession }) {
     }
   };
 
-  const removeAttachment = (indexToRemove) => {
+  const removeAttachment = (indexToRemove: number) => {
     setAttachments(prev => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
@@ -375,7 +425,7 @@ function HomeScreen({ session, setSession }) {
     const { data, error } = await supabase
       .from('jobs')
       .insert([{
-        client_id: session.user.id,
+        client_id: session?.user?.id,
         category: selectedCategory.id,
         subcategory: selectedSubs.join(', '),
         details: needsMeasurements === 'SÍ' ? `[MEDIDAS EXACTAS REQUERIDAS] - Medir: ${whatToMeasure.join(', ')}${customMeasurement ? ` (${customMeasurement})` : ''} | Herramientas: ${specificTools || 'Sin especificar'} | Presup. medidas: $${measurePriceMin}-$${measurePriceMax}\n\nDetalles adicionales: ${details}` : details,
@@ -401,7 +451,7 @@ function HomeScreen({ session, setSession }) {
         .channel(`job_proposals_${data[0].id}`)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'proposals', filter: `job_id=eq.${data[0].id}` }, 
           payload => {
-            setProposals(prev => [...prev, payload.new]);
+            setProposals(prev => [...prev, payload.new as Proposal]);
           }
         )
         .subscribe();
@@ -434,7 +484,7 @@ function HomeScreen({ session, setSession }) {
       .channel('public:jobs')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'jobs', filter: 'status=eq.pending' }, 
         payload => {
-          setAvailableJobs(prev => [payload.new, ...prev]);
+          setAvailableJobs(prev => [payload.new as Job, ...prev]);
         }
       )
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'jobs' }, 
@@ -451,13 +501,16 @@ function HomeScreen({ session, setSession }) {
     };
   }, [isTaskerMode, isOnline]);
 
+  const [agendaJobs, setAgendaJobs] = useState<Job[]>([]);
+  const [markedDates, setMarkedDates] = useState<any>({});
+
   const fetchAgendaJobs = async () => {
     if (!session?.user?.id) return;
     try {
       const { data, error } = await supabase
         .from('jobs')
         .select('*')
-        .eq('client_id', session.user.id)
+        .eq('client_id', session?.user?.id)
         .not('scheduled_date', 'is', null)
         .order('scheduled_date', { ascending: true });
       
@@ -465,7 +518,7 @@ function HomeScreen({ session, setSession }) {
       if (data) {
         setAgendaJobs(data);
         // Create markedDates object for the calendar dots
-        const marked = {};
+        const marked: { [key: string]: any } = {};
         data.forEach(job => {
           if (job.scheduled_date) {
             marked[job.scheduled_date] = { marked: true, dotColor: '#1A6BFF' };
@@ -484,13 +537,13 @@ function HomeScreen({ session, setSession }) {
     }
   }, [step, session]);
 
-  const handleInterest = async (jobId) => {
+  const handleInterest = async (jobId: string) => {
     try {
       const { error } = await supabase
         .from('proposals')
         .insert([{
           job_id: jobId,
-          tasker_id: session.user.id,
+          tasker_id: session?.user?.id,
           tasker_name: userName,
           price: parseInt(priceMin) || 0,
           status: 'pending'
@@ -499,8 +552,8 @@ function HomeScreen({ session, setSession }) {
       if (error) throw error;
       Alert.alert("¡Enviado!", "Tu interés ha sido notificado al cliente.");
       setSelectedOrder(null);
-    } catch (err) {
-      Alert.alert("Error", "No se pudo enviar: " + err.message);
+    } catch (err: any) {
+      Alert.alert("Error", "No se pudo enviar: " + (err?.message || "Error desconocido"));
     }
   };
 
@@ -577,7 +630,7 @@ function HomeScreen({ session, setSession }) {
   ];
 
 
-  const toggleSub = (subName) => {
+  const toggleSub = (subName: string) => {
     if (selectedSubs.includes(subName)) {
       setSelectedSubs(selectedSubs.filter(s => s !== subName));
     } else {
@@ -587,7 +640,7 @@ function HomeScreen({ session, setSession }) {
 
   const GEMINI_API_KEY = "PEGA_TU_API_KEY_AQUI"; // REEMPLAZAR CON LA CLAVE REAL DE GEMINI
 
-  const handleSmartSearch = async (overrideQuery = null) => {
+  const handleSmartSearch = async (overrideQuery: string | null = null) => {
     const q = overrideQuery || searchQuery;
     if (!q.trim()) return;
     
@@ -721,7 +774,7 @@ function HomeScreen({ session, setSession }) {
                 onChangeText={setSearchQuery}
                 onSubmitEditing={() => handleSmartSearch()}
                 placeholder="Ej: Necesito arreglar..."
-                placeholderTextcolor="#424655"
+                placeholderTextColor="#424655"
                 style={{ flex: 1, color: '#191C1E', fontFamily: 'Inter_500Medium', fontSize: 14 }}
                 editable={!isSearching}
                 returnKeyType="search"
@@ -995,7 +1048,7 @@ function HomeScreen({ session, setSession }) {
                   style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 18, borderBottomWidth: idx === 2 ? 0 : 1, borderBottomColor: '#F2F4F6' }}
                 >
                   <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: '#1A6BFF10', alignItems: 'center', justifyContent: 'center' }}>
-                    <Feather name={item.icon} size={16} color="#1A6BFF" />
+                    <Feather name={item.icon as any} size={16} color="#1A6BFF" />
                   </View>
                   <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 14, flex: 1, marginLeft: 15 }}>{item.label}</Text>
                   <Feather name="chevron-right" size={16} color="#8B8FA8" />
@@ -1015,7 +1068,7 @@ function HomeScreen({ session, setSession }) {
                   style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 18, borderBottomWidth: idx === 3 ? 0 : 1, borderBottomColor: '#F2F4F6' }}
                 >
                   <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: item.bg, alignItems: 'center', justifyContent: 'center' }}>
-                    <Feather name={item.icon} size={16} color={item.color} />
+                    <Feather name={item.icon as any} size={16} color={item.color} />
                   </View>
                   <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 14, flex: 1, marginLeft: 15 }}>{item.label}</Text>
                   <Feather name="chevron-right" size={16} color="#8B8FA8" />
@@ -1091,7 +1144,7 @@ function HomeScreen({ session, setSession }) {
                     textMonthFontSize: 16,
                     textDayHeaderFontSize: 12,
                   }}
-                  onDayPress={(day) => {
+                  onDayPress={(day: any) => {
                     setSelectedAgendaDate(day.dateString);
                   }}
                   markedDates={{
@@ -1119,7 +1172,7 @@ function HomeScreen({ session, setSession }) {
               </View>
 
               {jobsForSelectedDate.length === 0 ? (
-                <View style={{ alignItems: 'center', justifyContent: 'center', py: 40, backgroundColor: '#FFFFFF', borderRadius: 24, padding: 30, borderWidth: 1, borderColor: '#F2F4F6' }}>
+                <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 40, backgroundColor: '#FFFFFF', borderRadius: 24, padding: 30, borderWidth: 1, borderColor: '#F2F4F6' }}>
                   <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#F8F9FB', alignItems: 'center', justifyContent: 'center', marginBottom: 15 }}>
                     <Feather name="calendar" size={24} color="#8B8FA8" />
                   </View>
@@ -1902,9 +1955,9 @@ function HomeScreen({ session, setSession }) {
               <Feather name="search" size={18} color="#424655" />
               <TextInput 
                 placeholder="Busca un servicio..." 
-                placeholderTextcolor="#424655" 
+                placeholderTextColor="#424655" 
                 style={{ color: '#191C1E', fontFamily: 'Inter_500Medium', marginLeft: 10, flex: 1, fontSize: 13 }} 
-                onSubmitEditing={(e) => handleSmartSearch(e.nativeEvent.text)}
+                onSubmitEditing={(e: any) => handleSmartSearch(e.nativeEvent.text)}
                 returnKeyType="search"
               />
             </View>
@@ -1932,7 +1985,7 @@ function HomeScreen({ session, setSession }) {
                       borderWidth: isActive ? 2 : 0,
                       borderColor: '#1A6BFF'
                     }}>
-                      <MaterialCommunityIcons name={cat.iconName} size={26} color={isActive ? '#1A6BFF' : '#8B8FA8'} />
+                      <MaterialCommunityIcons name={cat.iconName as any} size={26} color={isActive ? '#1A6BFF' : '#8B8FA8'} />
                     </View>
                     <Text style={{ 
                       fontFamily: isActive ? 'Inter_500Medium' : 'Inter_500Medium', 
@@ -2067,7 +2120,7 @@ function HomeScreen({ session, setSession }) {
                 style={{ width: '31%', backgroundColor: '#F2F4F6', borderRadius: 16, paddingVertical: 18, alignItems: 'center', marginBottom: 14, borderWidth: 1, borderColor: '#F2F4F6', marginRight: (index + 1) % 3 === 0 ? 0 : '3.5%' }}
               >
                 <View style={{ width: 56, height: 56, borderRadius: 18, backgroundColor: cat.color + '22', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
-                  <MaterialCommunityIcons name={cat.iconName} size={30} color={cat.color} />
+                  <MaterialCommunityIcons name={cat.iconName as any} size={30} color={cat.color} />
                 </View>
                 <Text style={{ fontFamily: 'Inter_500Medium', color: '#424655', fontSize: 10, textAlign: 'center', letterSpacing: 0.2 }}>{cat.label}</Text>
               </TouchableOpacity>
@@ -2185,7 +2238,7 @@ function HomeScreen({ session, setSession }) {
                     }}
                   >
                     <View style={{ width: 45, height: 45, borderRadius: 23, backgroundColor: '#F2F4F6', alignItems: 'center', justifyContent: 'center', marginRight: 15 }}>
-                      <Feather name={loc.icon} size={20} color={loc.isCurrent ? "#1A6BFF" : "#8B8FA8"} />
+                      <Feather name={loc.icon as any} size={20} color={loc.isCurrent ? "#1A6BFF" : "#8B8FA8"} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontFamily: 'Inter_500Medium', color: '#191C1E', fontSize: 15, marginBottom: 3 }}>{loc.name}</Text>
@@ -2381,7 +2434,7 @@ function HomeScreen({ session, setSession }) {
 // ══════════════════════════════════════════
 // AUTHENTICATION SCREEN
 // ══════════════════════════════════════════
-function AuthScreen({ setSession }) {
+function AuthScreen({ setSession }: { setSession: (session: any) => void }) {
   const [mode, setModeState] = useState('welcome'); 
   const fadeAnim = React.useRef(new Animated.Value(1)).current;
   const imageFadeAnim = React.useRef(new Animated.Value(0)).current;
@@ -2406,9 +2459,9 @@ function AuthScreen({ setSession }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateIsSet, setDateIsSet] = useState(false);
   
-  const [frontId, setFrontId] = useState(null);
-  const [backId, setBackId] = useState(null);
-  const [selfie, setSelfie] = useState(null);
+  const [frontId, setFrontId] = useState<string | null>(null);
+  const [backId, setBackId] = useState<string | null>(null);
+  const [selfie, setSelfie] = useState<string | null>(null);
 
   const [isLocating, setIsLocating] = useState(false);
   const [showMapModal, setShowMapModal] = useState(false);
@@ -2422,7 +2475,7 @@ function AuthScreen({ setSession }) {
   const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
   // Transition Engine (True Fade Animation)
-  const setMode = (newMode) => {
+  const setMode = (newMode: string) => {
     if (Platform.OS === 'android') {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     }
@@ -2460,7 +2513,7 @@ function AuthScreen({ setSession }) {
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any) => {
       if (event === 'PASSWORD_RECOVERY') {
         setMode('update_password');
       }
@@ -2468,14 +2521,14 @@ function AuthScreen({ setSession }) {
     return () => subscription.unsubscribe();
   }, []);
   
-  const Requirement = ({ met, text }) => (
+  const Requirement = ({ met, text }: { met: boolean; text: string }) => (
     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
       <Feather name={met ? "check-circle" : "circle"} size={14} color={met ? "#22C55E" : "#8B8FA8"} />
       <Text style={{ color: met ? '#22C55E' : '#8B8FA8', marginLeft: 8, fontSize: 13, fontFamily: 'Inter_500Medium' }}>{text}</Text>
     </View>
   );
 
-  const onDateChange = (event, selectedDate) => {
+  const onDateChange = (event: any, selectedDate: Date | undefined) => {
     if (Platform.OS === 'android') setShowDatePicker(false);
     if (selectedDate) {
       setBirthDate(selectedDate);
@@ -2483,14 +2536,14 @@ function AuthScreen({ setSession }) {
     }
   };
 
-  const formatDate = (date) => {
+  const formatDate = (date: Date) => {
     let day = date.getDate().toString().padStart(2, '0');
     let month = (date.getMonth() + 1).toString().padStart(2, '0');
     let year = date.getFullYear();
     return `${day}/${month}/${year}`;
   };
 
-  const pickImage = async (setImage) => {
+  const pickImage = async (setImage: (uri: string) => void) => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -2518,7 +2571,7 @@ function AuthScreen({ setSession }) {
     }
   };
 
-  const Stepper = ({ step, title, subtitle }) => (
+  const Stepper = ({ step, title, subtitle }: { step: number; title: string; subtitle?: string }) => (
     <View style={{ alignItems: 'center', marginBottom: 25, marginTop: 10 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
         <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#1A6BFF', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
@@ -2675,7 +2728,7 @@ function AuthScreen({ setSession }) {
         if (result.type === 'success' && result.url) {
           const hashArr = result.url.split('#');
           if (hashArr.length > 1) {
-            const queryParams = hashArr[1].split('&').reduce((acc, current) => {
+            const queryParams = hashArr[1].split('&').reduce((acc: { [key: string]: string }, current) => {
               const [key, value] = current.split('=');
               acc[key] = value;
               return acc;
@@ -2762,9 +2815,9 @@ function AuthScreen({ setSession }) {
             {mode === 'login' && (
               <View>
                 <Text style={styles.label}>Correo electrónico</Text>
-                <TextInput style={[styles.input, { color: '#191C1E' }]} placeholder="correo@ejemplo.com" placeholderTextcolor="#424655" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
+                <TextInput style={[styles.input, { color: '#191C1E' }]} placeholder="correo@ejemplo.com" placeholderTextColor="#424655" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
                 <Text style={styles.label}>Contraseña</Text>
-                <TextInput style={[styles.input, { color: '#191C1E' }]} placeholder="••••••••" placeholderTextcolor="#424655" secureTextEntry value={password} onChangeText={setPassword} />
+                <TextInput style={[styles.input, { color: '#191C1E' }]} placeholder="••••••••" placeholderTextColor="#424655" secureTextEntry value={password} onChangeText={setPassword} />
                 <TouchableOpacity style={{ alignItems: 'flex-end', marginBottom: 25 }} onPress={() => setMode('forgot_password')}><Text style={{ fontFamily: 'Inter_500Medium', color: '#1A6BFF', fontSize: 13 }}>¿Olvidaste tu clave?</Text></TouchableOpacity>
                 <TouchableOpacity style={styles.primaryButton} onPress={handleLogin}><Text style={styles.primaryButtonText}>Entrar</Text></TouchableOpacity>
                 <TouchableOpacity style={[styles.primaryButton, { backgroundColor: 'transparent', borderWidth: 1, borderColor: 'rgba(0,0,0,0.07)' }]} onPress={() => setMode('register_step1')}><Text style={[styles.primaryButtonText, { color: '#424655' }]}>Registrarme</Text></TouchableOpacity>
@@ -2775,7 +2828,7 @@ function AuthScreen({ setSession }) {
               <View>
                 <Stepper step={1} title="Datos Personales" subtitle="Información básica de tu cuenta" />
                 <Text style={styles.label}>Nombre completo</Text>
-                <TextInput style={[styles.input, { color: '#191C1E' }]} placeholder="Ej. Daniel Alarcón" placeholderTextcolor="#424655" value={name} onChangeText={setName} />
+                <TextInput style={[styles.input, { color: '#191C1E' }]} placeholder="Ej. Daniel Alarcón" placeholderTextColor="#424655" value={name} onChangeText={setName} />
                 <Text style={styles.label}>Fecha de Nacimiento</Text>
                 <TouchableOpacity style={styles.datePickerButton} onPress={() => setShowDatePicker(true)}>
                     <Text style={{ fontFamily: 'Inter_500Medium', color: dateIsSet ? '#191C1E' : '#9EA3B0', fontSize: 15 }}>
@@ -2789,9 +2842,9 @@ function AuthScreen({ setSession }) {
                   </TouchableOpacity>
                 )}
                 <Text style={styles.label}>Correo electrónico</Text>
-                <TextInput style={[styles.input, { color: '#191C1E' }]} placeholder="correo@ejemplo.com" placeholderTextcolor="#424655" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
+                <TextInput style={[styles.input, { color: '#191C1E' }]} placeholder="correo@ejemplo.com" placeholderTextColor="#424655" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
                 <Text style={styles.label}>Crea tu Contraseña</Text>
-                <TextInput style={[styles.input, { color: '#191C1E', marginBottom: 10 }]} placeholder="••••••••" placeholderTextcolor="#424655" secureTextEntry value={password} onChangeText={setPassword} />
+                <TextInput style={[styles.input, { color: '#191C1E', marginBottom: 10 }]} placeholder="••••••••" placeholderTextColor="#424655" secureTextEntry value={password} onChangeText={setPassword} />
                 <View style={{ marginBottom: 20, backgroundColor: 'rgba(0,0,0,0.03)', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#F2F4F6' }}>
                   <Text style={{ color: '#191C1E', fontFamily: 'Inter_500Medium', marginBottom: 10, fontSize: 13 }}>Tu contraseña debe contener:</Text>
                   <Requirement met={hasUpperCase} text="1 Letra mayúscula" />
@@ -2801,7 +2854,7 @@ function AuthScreen({ setSession }) {
                   <Requirement met={hasMinLength} text="8 Caracteres o más" />
                 </View>
                 <Text style={styles.label}>Confirmar Contraseña</Text>
-                <TextInput style={[styles.input, { color: '#191C1E' }]} placeholder="••••••••" placeholderTextcolor="#424655" secureTextEntry value={confirmPassword} onChangeText={setConfirmPassword} />
+                <TextInput style={[styles.input, { color: '#191C1E' }]} placeholder="••••••••" placeholderTextColor="#424655" secureTextEntry value={confirmPassword} onChangeText={setConfirmPassword} />
                 <TouchableOpacity style={styles.primaryButton} onPress={validateStep1AndProceed}>
                   <Text style={styles.primaryButtonText}>Siguiente Paso ➔</Text>
                 </TouchableOpacity>
@@ -2979,7 +3032,7 @@ function AuthScreen({ setSession }) {
 // ══════════════════════════════════════════
 // PREMIUM SPLASH SCREEN (UBER STYLE)
 // ══════════════════════════════════════════
-const ServiTaskSplashScreen = ({ onFinish }) => {
+const ServiTaskSplashScreen = ({ onFinish }: { onFinish: () => void }) => {
   const scaleValue = React.useRef(new Animated.Value(0.4)).current;
   const opacityValue = React.useRef(new Animated.Value(0)).current;
   const translateY = React.useRef(new Animated.Value(15)).current;
@@ -3031,7 +3084,7 @@ const ServiTaskSplashScreen = ({ onFinish }) => {
 // ══════════════════════════════════════════
 export default function App() {
   let [fontsLoaded] = useFonts({ Inter_500Medium });
-  const [session, setSession] = useState(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
   const [isAppReady, setIsAppReady] = useState(false);
 
